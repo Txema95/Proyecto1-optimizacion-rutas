@@ -1,6 +1,17 @@
 import pandas as pd
 import streamlit as st
 
+#Conectar archivo base de datos
+import os
+import sys
+
+# Ruta ABSOLUTA a la raíz del proyecto (carpeta PROYECTO1-OPTIMIZACION-RUTAS)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
+
+from app.database import database
 
 
 
@@ -21,17 +32,19 @@ def limpiar_columnas(df):
 
 def main():
 
-
+    #Creamos el objeto de la base de datos
+    db= database()
+    
     
     st.set_page_config(page_title="Gestor de rutas", layout="wide")
 
     # ----------------- CARGAR DATOS -----------------
-    pedidos = limpiar_columnas(pd.read_csv("../app/data/pedidos.csv", sep=";"))
-    clientes = limpiar_columnas(pd.read_csv("../app/data/clientes.csv", sep=";"))
-    destinos = limpiar_columnas(pd.read_csv("../app/data/destinos.csv", sep=";"))
-    lineaspedidos = limpiar_columnas(pd.read_csv("../app/data/lineaspedidos.csv", sep=";"))
-    productos = limpiar_columnas(pd.read_csv("../app/data/productos.csv", sep=";"))
-    provincias = limpiar_columnas(pd.read_csv("../app/data/Provincias.csv", sep=";"))
+    pedidos = limpiar_columnas(db.select_all('Pedidos'))
+    clientes = limpiar_columnas(db.select_all('Clientes'))
+    destinos = limpiar_columnas(db.select_all('Destinos'))
+    lineaspedidos = limpiar_columnas(db.select_all('LineasPedido'))
+    productos = limpiar_columnas(db.select_all('Productos'))
+    provincias = limpiar_columnas(db.select_all('Provincias'))
     
     # info a mostrar
     '''
@@ -80,9 +93,8 @@ def main():
         st.markdown("---")
 
 
-        # st.dataframe(pedidos_hoy, use_container_width=True)
         
-        # Construimos TODO el HTML en una sola variable
+        # Construimos Todo el HTML en una sola variable
         lista_html = """
             <div style="
                 height:600px;
@@ -93,7 +105,7 @@ def main():
             ">
             """
             
-        # for i, row in detalle.iterrows():
+        # Añadimos el html de los pedidos
         for pedido_id, rows in grupos:
             
             # Datos únicos del pedido
@@ -118,9 +130,12 @@ def main():
                 <b>Cliente:</b> {cliente}<br>
                 <b>Dirección:</b> {destino}<br>
                 <b>Producto:</b> 
+                <details style="margin-top:8px;">
+                <summary><b>Productos ({len(rows)}):</b></summary>
                     <ul>
                         {productos_html}
                     </ul>
+                </details>
                 
             </div>
             """
