@@ -1,0 +1,9 @@
+PedidoID,DestinoEntregaID,nombre_completo,distancia_km,latitude,longitude
+1,11,"España, Guadalajara",455.56,40.6326979,-3.1646067
+2,39,"España, Sevilla",830.4,37.3886303,-5.9953403
+3,26,"España, Islas Baleares, Palma",205.58,39.5695818,2.6500745
+4,1,"España, Castellón",242.85,39.9860347,-0.0377354
+5,16,"España, Pamplona",825.56,42.8181992,-1.6440089
+6,29,"España, Lugo",821.5,42.9913123,-7.5908294
+7,18,"España, Las Palmas",353.06,28.1288694,-15.4349015
+8,32,"España, Palencia",561.34,42.0108856,-4.5328735
