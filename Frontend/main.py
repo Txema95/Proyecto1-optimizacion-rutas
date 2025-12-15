@@ -1,9 +1,13 @@
 import pandas as pd
 import streamlit as st
+from streamlit_folium import st_folium
 
 #Conectar archivo base de datos
 import os
 import sys
+
+import folium
+
 
 # Ruta ABSOLUTA a la raíz del proyecto (carpeta PROYECTO1-OPTIMIZACION-RUTAS)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -111,10 +115,33 @@ def main():
             # Datos únicos del pedido
             cliente = rows["nombre"].iloc[0]
             destino = rows["nombre_completo"].iloc[0]
-            
             productos_html = ""
+            
+            precioTotal = 0
+            diaMinCaducidad = rows['Caducidad'].iloc[0]
             for _, r in rows.iterrows():
-                productos_html += f"<li>{r['Nombre']}</li>"
+            
+                if diaMinCaducidad > r['Caducidad']:
+                    diaMinCaducidad = r['Caducidad']
+            
+            
+                productos_html += f"""<li>
+                    <details style="margin-top:8px;">
+                    <summary>
+                    <b>{r['Nombre']}:</b></summary>
+                    <ul>
+                """
+                precioTotalProducto = float(r["PrecioVenta"]) * float(r["Cantidad"])
+                productos_html += f"<li><b>Cantidad: </b>{r['Cantidad']}</li>"
+                productos_html += f"<li><b>Precio total: </b>{precioTotalProducto}€</li>"
+                productos_html += f"<li><b>Dias en caducar: </b>{r['Caducidad']}</li>"
+                precioTotal += precioTotalProducto
+                
+                productos_html += """
+                    </ul>
+                    </details>
+                    </li>"""
+
             
             
             
@@ -129,13 +156,14 @@ def main():
                 <b>Pedido:</b> {pedido_id}<br>
                 <b>Cliente:</b> {cliente}<br>
                 <b>Dirección:</b> {destino}<br>
-                <b>Producto:</b> 
                 <details style="margin-top:8px;">
                 <summary><b>Productos ({len(rows)}):</b></summary>
                     <ul>
                         {productos_html}
                     </ul>
                 </details>
+                <b>Precio total:</b> {precioTotal}€ <br>
+                <b>Dia minimo de caducidad:</b> {diaMinCaducidad} dias<br>
                 
             </div>
             """
@@ -147,6 +175,13 @@ def main():
 
     # -------- COLUMNA MEDIO (mapa) --------
     with col_middle:
+        st.title("Mapa de rutas")
+
+        m = folium.Map(location=[41.3874, 2.1686], zoom_start=12)
+        folium.Marker([41.3874, 2.1686], popup="Barcelona").add_to(m)
+
+        st_folium(m, width=700, height=500)
+        
         
         # Contenedor grande (mapa / visualización de ruta)
         st.markdown(
@@ -167,6 +202,8 @@ def main():
             """,
             unsafe_allow_html=True,
         )
+
+
 
 
     # -------- COLUMNA DERECHA (contenido principal) --------
