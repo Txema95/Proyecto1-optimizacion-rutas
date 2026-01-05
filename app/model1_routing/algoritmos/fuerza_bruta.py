@@ -1,8 +1,9 @@
 import pandas as pd
 from itertools import permutations
+from constantes import ORIGEN as mataro
 
 def calcular(df_matriz_distancias):
-    origen_fijo = "Mataró"
+    origen_fijo = mataro['nombre_completo']
     # Los puntos a permutar son todos los demás
     puntos_intermedios = [d for d in df_matriz_distancias.columns.values if d != origen_fijo]
 
@@ -36,7 +37,7 @@ def calcular(df_matriz_distancias):
 
     return df_resultados_ordenado
 
-def calcular_distancia_ruta(ruta, matriz_distancias, origen):
+def calcular_distancia_ruta(ruta, df_matriz_distancias, origen):
     """
     Calcula la distancia total de una ruta cíclica.
     La ruta comienza en el 'origen', recorre los demás puntos y regresa al 'origen'.
@@ -51,13 +52,13 @@ def calcular_distancia_ruta(ruta, matriz_distancias, origen):
         destino_actual = paradas_internas[i+1]
         
         # Acceder a la distancia en el DataFrame: df.loc[origen, destino]
-        distancia = matriz_distancias.loc[origen_actual, destino_actual]
+        distancia = df_matriz_distancias.loc[origen_actual, destino_actual]
         distancia_total += distancia
     
     # 2. Regreso al origen (e.g., P2 -> Origen)
     # Desde el último punto de la secuencia, de vuelta al punto de inicio.
     # ultimo_destino = paradas_internas[-1]
-    # distancia_regreso = matriz_distancias.loc[ultimo_destino, origen]
+    # distancia_regreso = df_matriz_distancias.loc[ultimo_destino, origen]
     # distancia_total += distancia_regreso
     
     return distancia_total

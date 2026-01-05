@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from pandas.api.types import is_string_dtype
 import numpy as np
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
@@ -44,12 +45,13 @@ def main():
         # Unir tablas usando left join
         df_pedidos_con_destinos = pd.merge(df_pedidos, df_destinos, 
         left_on='DestinoEntregaID', right_on='DestinoID', how='left')
-        df_pedidos_con_destinos = df_pedidos_con_destinos.drop(["FechaPedido","provinciaID","ClienteID","coordenadas_gps","DestinoID"], axis=1)
+        df_pedidos_con_destinos = df_pedidos_con_destinos.drop(["provinciaID","ClienteID","coordenadas_gps","DestinoID"], axis=1)
     else:
         df_pedidos_con_destinos = pd.read_csv("app/data/pedidos_con_destinos.csv")
     
     #df_pedidos_con_destinos['distancia_km'] = pd.to_numeric(df_pedidos_con_destinos['distancia_km'], errors='coerce')
-    df_pedidos_con_destinos['distancia_km'] = df_pedidos_con_destinos["distancia_km"].str.replace(",", ".", regex=False).astype(float)
+    if(is_string_dtype(df_pedidos_con_destinos["distancia_km"])):
+        df_pedidos_con_destinos['distancia_km'] = df_pedidos_con_destinos["distancia_km"].str.replace(",", ".", regex=False).astype(float)
     
     df_pedidos_con_destinos.to_csv("app/data/pedidos_con_destinos.csv", index=False)
     #else:

@@ -34,3 +34,8 @@ algoritmo de la reduccion de la dimensionalidad => ENCONTRAR LA MEJOR POBLACION 
 algoritmo de clustering => para definir grupos o clusters de ciudades => reducimos el espacio para hacer caminos mas cortos
 
 PyGAD => librería que proporciona un marco sencillo y flexible para implementar algoritmos genéticos
+
+
+
+
+corregir llamada al algoritmo genetico, mirar gemini. peta porque lee string en vez de indices
