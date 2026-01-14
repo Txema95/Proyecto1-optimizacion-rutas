@@ -11,7 +11,7 @@
             "module": "streamlit",
             "args": [
                 "run",
-                "app/model1_routing/main_model1.py"
+                "app/model_routing/main_model1.py"
             ]
         },
         {

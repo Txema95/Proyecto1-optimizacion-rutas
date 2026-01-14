@@ -71,8 +71,8 @@ def calculate_coordinates(df_destinos):
 
 def main():
     if not os.path.exists("app/data/pedidos_con_destinos.csv"):            
-        df_pedidos = pd.read_csv("app/data/Pedidos.csv")
-        df_destinos = pd.read_csv("app/data/Destinos.csv")
+        df_pedidos = pd.read_csv("app/data/pedidos.csv")
+        df_destinos = pd.read_csv("app/data/destinos.csv")
         print("Calculating coordinates for destinos...")
         df_destinos = calculate_coordinates(df_destinos)
         print("Coordinates calculated")
