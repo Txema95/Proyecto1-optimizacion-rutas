@@ -1,6 +1,6 @@
 import pandas as pd
 from itertools import permutations
-from constantes import ORIGEN as mataro
+from app.constantes import ORIGEN as mataro
 
 def calcular(df_matriz_distancias):
     origen_fijo = mataro['nombre_completo']

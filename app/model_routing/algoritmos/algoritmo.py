@@ -1,7 +1,7 @@
 
 import time
 import streamlit as st
-from algoritmos import fuerza_bruta, genetico
+from app.model_routing.algoritmos import fuerza_bruta, genetico
 
 def usar_fuerza_bruta(df_matriz_distancias):
     start = time.time()
