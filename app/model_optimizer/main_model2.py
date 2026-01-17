@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from app.constantes import ORIGEN as mataro
+from app.algoritmos import algoritmo
 
 CAPACIDAD_MAX = 500
 
@@ -35,6 +36,12 @@ def index_matriz(df):
     # Mapeo: ID del destino -> Posición en la matriz
     return {id_dest: i for i, id_dest in enumerate(df_origen['DestinoEntregaID'])}
 
+def pedidos_restantes(df, fecha):
+    # Filtramos los que NO son resto (son camiones de 500 unidades exactas)
+    # Y que ya están fabricados (pueden salir hoy)
+    mask_directos = (df['Es_Resto'] == True) & \
+                    (df['FechaFinFabricacion'] <= pd.to_datetime(fecha))
+    return df[mask_directos].copy()
 
 def pedidos_directos(df, fecha):
     # Filtramos los que NO son resto (son camiones de 500 unidades exactas)
@@ -48,23 +55,23 @@ def procesar_pedidos_directos(destino_id, matriz_km, matriz_tiempo,mapping):
     id_origen = 0 
     
     # Obtenemos los índices de la matriz
-    idx_orig = mapping[id_origen]
-    idx_dest = mapping[destino_id]
+    #idx_orig = mapping[id_origen]
+    #idx_dest = mapping[destino_id]
     
     # Consultamos los valores de IDA
-    dist_ida = matriz_km[idx_orig][idx_dest]
-    tiempo_ida = matriz_tiempo[idx_orig][idx_dest]
-    
+    dist_ida = matriz_km[id_origen][destino_id]
+    tiempo_ida = matriz_tiempo[id_origen][destino_id]
+
     return dist_ida, tiempo_ida
 
-def pedidos_restantes(df):
-    return df[df['Es_Resto'] == True]
 
+def ejecutar_optimización_sobrantes(df_sobrantes, matriz_km, matriz_tiempo):
+    algoritmo.usar_genetica_sobrantes(df_sobrantes, matriz_km, matriz_tiempo)
 
+def ejecutar_kmeans(df):
+    return algoritmo.usar_kmeans(df)
+def ejecutar_kmeans_tiempos(df, matriz_tiempos):
+    return algoritmo.usar_kmeans_tiempos(df, matriz_tiempos)
 
-# Ejecución
-#df_preparado = preparar_unidades_de_carga(df_final)
-
-# Separación para el modelo
-#df_directos = df_preparado[df_preparado['Es_Resto'] == False]
-#df_sobrantes = df_preparado[df_preparado['Es_Resto'] == True].reset_index(drop=True)
+def ejecutar_kmeans_restringido(df, capacidad_max):
+    return algoritmo.usar_kmeans_restringido(df, capacidad_max)

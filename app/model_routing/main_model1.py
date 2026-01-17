@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import app.model_routing.generar_matriz_distancias_tiempos as dist_tiempos
-import app.model_routing.algoritmos.algoritmo as algoritmo
+import app.algoritmos.algoritmo as algoritmo
 df_pedidos_con_destinos = pd.read_csv("app/data/pedidos_con_destinos.csv")
 
 def obtener_matriz_distancias_tiempos(df):
