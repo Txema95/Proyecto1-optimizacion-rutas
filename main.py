@@ -3,8 +3,9 @@ import streamlit as st
 import app.model_optimizer.main_model2 as modelRepartoProductos
 import app.model_routing.main_model1 as modelRouting
 from app.constantes import FECHA_SIMULACION as fecha_simulacion, ORIGEN as mataro
-
-
+import time
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 
 #Esta funcion limpia los nombres de las columnas
@@ -17,6 +18,64 @@ def limpiar_columnas(df):
         .str.strip()               # quita espacios
     )
     return df
+
+def pedidos_con_fecha_entrga():
+
+    df_pedidos_con_destinos = pd.read_csv("app/data/pedidos_con_destinos.csv")
+    if(df_pedidos_con_destinos.empty==False):        
+        df_lineas_pedidos = pd.read_csv("app/data/lineaspedidos.csv")
+        df_productos = pd.read_csv("app/data/productos.csv")
+        df_final = (df_pedidos_con_destinos
+            .merge(df_lineas_pedidos, on="PedidoID", how="inner")
+            .merge(df_productos, on="ProductoID", how="inner"))
+        df_final = df_final.drop(["distancia_km","LineaPedidoID","Nombre","PrecioVenta"], axis=1)
+
+        # 1. Convertir a formato fecha (si no lo está ya)
+        df_final['FechaPedido'] = pd.to_datetime(df_final['FechaPedido'])
+
+        # 2. Fecha Inicio Fabricación (Día después del pedido)
+        df_final['FechaInicioFab'] = df_final['FechaPedido'] + pd.to_timedelta(1, unit='D')
+
+        # 3. Fecha Fin Fabricación (Disponibilidad para envío)
+        # Sumamos el tiempo medio a partir del inicio de la fabricación
+        df_final['FechaFinFabricacion'] = df_final['FechaInicioFab'] + pd.to_timedelta(df_final['TiempoFabricacionMedio'], unit='D')
+        
+        # 4. Fecha de Caducidad 
+        # Fecha Caducidad = Fecha Pedido + Tiempo Fabricación + Días Caducidad
+        # Nota: Aquí el enunciado no menciona el "día de espera", 
+        # pero por coherencia lógica, la caducidad suele contar desde que el producto existe.
+        df_final['FechaCaducidad'] = df_final['FechaFinFabricacion'] + pd.to_timedelta(df_final['Caducidad'], unit='D')
+        # 5. Agrupamos por pedido 
+        # (Asumimos que productos listos el mismo día para el mismo sitio se pueden juntar)
+        # df_agrupado = df_final.groupby(['PedidoID']).agg({
+        #     'Cantidad': 'sum',
+        #     'FechaPedido': 'first',
+        #     'DestinoEntregaID': 'first',
+        #     'latitude': 'first',
+        #     'longitude': 'first',
+        #     'nombre_completo': 'first',
+        #     'FechaFinFabricacion': 'max',
+        #     'FechaCaducidad': 'min', # El camión debe cumplir la caducidad más estricta
+        #     'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
+                        
+        # }).reset_index()
+        df_agrupado = df_final.groupby(['FechaFinFabricacion','DestinoEntregaID']).agg({
+            'Cantidad': 'sum',
+            #'FechaPedido': 'first',
+            #'DestinoEntregaID': 'first',
+            #'latitude': 'first',
+            #'longitude': 'first',
+            #'nombre_completo': 'first',
+            #'FechaFinFabricacion': 'max',
+            'FechaCaducidad': 'min', # El camión debe cumplir la caducidad más estricta
+            'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
+            #'DestinoEntregaID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
+                        
+        }).reset_index()
+        
+        df_agrupado.sort_values(by=['FechaFinFabricacion'], inplace=True)
+        
+        return  df_agrupado
 
 def revisar_datos():
 
@@ -53,23 +112,24 @@ def revisar_datos():
         # Fecha Caducidad = Fecha Pedido + Tiempo Fabricación + Días Caducidad
         # Nota: Aquí el enunciado no menciona el "día de espera", 
         # pero por coherencia lógica, la caducidad suele contar desde que el producto existe.
-        df_final['FechaCaducidad'] = df_final['FechaPedido'] + pd.to_timedelta(df_final['TiempoFabricacionMedio'], unit='D') + pd.to_timedelta(df_final['Caducidad'], unit='D')
+        df_final['FechaCaducidad'] = df_final['FechaFinFabricacion'] + pd.to_timedelta(df_final['Caducidad'], unit='D')
         # 5. Agrupamos por destino y fecha en la que terminan de fabricarse
         # (Asumimos que productos listos el mismo día para el mismo sitio se pueden juntar)
         df_agrupado = df_final.groupby(['DestinoEntregaID', 'FechaFinFabricacion', 'nombre_completo', 'latitude','longitude']).agg({
             'Cantidad': 'sum',
             'FechaCaducidad': 'min', # El camión debe cumplir la caducidad más estricta
-            'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
-            
+            'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos            
         }).reset_index()
         
         
+        df_agrupado.sort_values(by=['FechaFinFabricacion'], inplace=True)
         return  df_agrupado
     
 def get_matrices_distancia_tiempo_mapping(df):
     df_geo = df[['DestinoEntregaID', 'latitude', 'longitude','nombre_completo']].drop_duplicates('DestinoEntregaID')
 
     df_matriz_distancias, df_matriz_tiempos, mapping = modelRouting.obtener_matriz_distancias_tiempos(df_geo)
+    
     return df_matriz_distancias, df_matriz_tiempos, mapping
 
 def obtener_pedidos_entregables(df, fecha_simulacion, dias_vista):
@@ -78,8 +138,9 @@ def obtener_pedidos_entregables(df, fecha_simulacion, dias_vista):
     
     # 1. Filtramos pedidos que se fabrican como máximo en los próximos X días
     # 2. Y que no hayan caducado para la fecha de salida prevista
-    mask = (df['FechaFinFabricacion'] <= fecha_limite) & \
-           (df['FechaCaducidad'] > fecha_hoy)
+    #mask = (df['FechaFinFabricacion'] <= fecha_limite) & \
+    #       (df['FechaCaducidad'] > fecha_hoy)
+    mask = (df['FechaFinFabricacion'] == fecha_hoy)
     
     return df[mask].copy()
 
@@ -110,8 +171,11 @@ def procesar_directos_con_matriz(df_directos_hoy, matriz_km, matriz_tiempo,mappi
 
 def main():
     st.set_page_config(page_title="Gestor de rutas", layout="wide")
-    df_pedidos = revisar_datos()
-    df_pedidos_entregables = obtener_pedidos_entregables(df_pedidos, fecha_simulacion,2)
+    #df_pedidos = revisar_datos()
+    df_pedidos = pedidos_con_fecha_entrga()
+    df_pedidos.to_csv("productos_fabricados.csv", index=False)    
+    st.dataframe(df_pedidos)
+    df_pedidos_entregables = obtener_pedidos_entregables(df_pedidos, fecha_simulacion,1)
     df_pedidos_entregables = modelRepartoProductos.preparar_unidades_de_carga(df_pedidos_entregables)
     st.dataframe(df_pedidos_entregables)
     #mapping = modelRepartoProductos.index_matriz(df_pedidos_entregables)
@@ -119,13 +183,28 @@ def main():
 
     df_matriz_distancias, df_matriz_tiempos, mapping = get_matrices_distancia_tiempo_mapping(df_pedidos_entregables)
     #st.dataframe(df_matriz_distancias)
-    st.dataframe(df_matriz_tiempos)
+    #st.dataframe(df_matriz_tiempos)
     #pedidos preparados para enviar en fecha_simulacion
     df_pedidos_directos = modelRepartoProductos.pedidos_directos(df_pedidos_entregables, fecha_simulacion)
     
     num_camiones_directos = (len(df_pedidos_directos))
-    st.dataframe(df_pedidos_directos)
+    pedidos_restantes = modelRepartoProductos.pedidos_restantes(df_pedidos_entregables, fecha_simulacion)
+    st.write(f"## 🚛 Pedidos a repartir hoy: {len(pedidos_restantes)} unidades 🚛 ##")
+    st.dataframe(pedidos_restantes)
+    inicio = time.time()
+
+    df = modelRepartoProductos.ejecutar_kmeans_restringido(pedidos_restantes,500)
+    #camiones = modelRepartoProductos.ejecutar_kmeans_tiempos(pedidos_restantes,df_matriz_tiempos)
+
+    # modelRepartoProductos.ejecutar_optimización_sobrantes(pedidos_restantes, df_matriz_distancias, df_matriz_tiempos)
+    pedidos_restantes.to_csv("app/data/pedidos_restantes_ia.csv", index=False)
+    df_matriz_distancias.to_csv("app/data/matriz_distancias.csv", index=False)
+    fin = time.time()
+    tiempo_total = fin - inicio
+    st.write(f"Tiempo de optimización de sobrantes: {tiempo_total:.2f} segundos")
+    #st.dataframe(df_pedidos_directos)
     resultados_directos = procesar_directos_con_matriz(df_pedidos_directos, df_matriz_distancias, df_matriz_tiempos,mapping)
+    st.write(f"## 🚚 Pedidos directos a entregar hoy: {num_camiones_directos} camiones 🚚 ##")
     st.dataframe(resultados_directos)
 
 
