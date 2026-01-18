@@ -15,6 +15,16 @@
             ]
         },
         {
+            "name": "Main_Front",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "Frontend/main.py"
+            ]
+        },
+        {
             "name": "Transform_data",
             "type": "debugpy",
             "request": "launch",

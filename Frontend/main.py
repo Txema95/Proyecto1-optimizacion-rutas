@@ -62,12 +62,13 @@ def main():
     
 
     # ----------------- CARGAR DATOS -----------------
-    pedidos = limpiar_columnas(pd.read_csv("../app/data/pedidos.csv", sep=";"))
-    clientes = limpiar_columnas(pd.read_csv("../app/data/clientes.csv", sep=";"))
-    destinos = limpiar_columnas(pd.read_csv("../app/data/destinos.csv", sep=";"))
-    lineaspedidos = limpiar_columnas(pd.read_csv("../app/data/lineaspedidos.csv", sep=";"))
-    productos = limpiar_columnas(pd.read_csv("../app/data/productos.csv", sep=";"))
-    provincias = limpiar_columnas(pd.read_csv("../app/data/provincias.csv", sep=";"))
+    pedidos = limpiar_columnas(pd.read_csv("app/data/pedidos.csv", sep=";"))
+    clientes = limpiar_columnas(pd.read_csv("app/data/clientes.csv", sep=";"))
+    destinos = limpiar_columnas(pd.read_csv("app/data/destinos.csv", sep=";"))
+    lineaspedidos = limpiar_columnas(pd.read_csv("app/data/lineaspedidos.csv", sep=";"))
+    productos = limpiar_columnas(pd.read_csv("app/data/productos.csv", sep=";"))
+    provincias = limpiar_columnas(pd.read_csv("app/data/provincias.csv", sep=";"))
+    
     
     '''
     # info a mostrar
