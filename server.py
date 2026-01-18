@@ -2,10 +2,12 @@ import pandas as pd
 import streamlit as st
 import app.model_optimizer.main_model2 as modelRepartoProductos
 import app.model_routing.main_model1 as modelRouting
-from app.constantes import FECHA_SIMULACION as fecha_simulacion, ORIGEN as mataro
+from app.camiones.Camiones import Camion 
+from app.constantes import FECHA_SIMULACION as fecha_simulacion, ORIGEN as mataro, CAPACIDAD_MAXIMA
 import time
 import matplotlib.pyplot as plt
 import plotly.express as px
+
 
 
 #Esta funcion limpia los nombres de las columnas
@@ -45,20 +47,6 @@ def pedidos_con_fecha_entrga():
         # Nota: Aquí el enunciado no menciona el "día de espera", 
         # pero por coherencia lógica, la caducidad suele contar desde que el producto existe.
         df_final['FechaCaducidad'] = df_final['FechaFinFabricacion'] + pd.to_timedelta(df_final['Caducidad'], unit='D')
-        # 5. Agrupamos por pedido 
-        # (Asumimos que productos listos el mismo día para el mismo sitio se pueden juntar)
-        # df_agrupado = df_final.groupby(['PedidoID']).agg({
-        #     'Cantidad': 'sum',
-        #     'FechaPedido': 'first',
-        #     'DestinoEntregaID': 'first',
-        #     'latitude': 'first',
-        #     'longitude': 'first',
-        #     'nombre_completo': 'first',
-        #     'FechaFinFabricacion': 'max',
-        #     'FechaCaducidad': 'min', # El camión debe cumplir la caducidad más estricta
-        #     'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
-                        
-        # }).reset_index()
         df_agrupado = df_final.groupby(['FechaFinFabricacion','DestinoEntregaID']).agg({
             'Cantidad': 'sum',
             #'FechaPedido': 'first',
@@ -169,6 +157,85 @@ def procesar_directos_con_matriz(df_directos_hoy, matriz_km, matriz_tiempo,mappi
     
     return pd.DataFrame(resultados_directos)
 
+def obtener_camiones():
+    #agrupamos pedidos por fecha de fabricación (pedidos listos para enviar) y destino
+    df_pedidos = pedidos_con_fecha_entrga()
+    #obtenemos los pedidos listos para entrar en la fecha_simulacion
+    df_pedidos_entregables = obtener_pedidos_entregables(df_pedidos, fecha_simulacion,1)
+    #existe algun pedido que de por si llene un camion? -> prepara_unidades_de_carga -> si es_resto=false ese pedido se puede enviar a su destino
+    df_pedidos_entregables = modelRepartoProductos.preparar_unidades_de_carga(df_pedidos_entregables)
+    #obtenemos matrices de tiempo y distancia
+    df_matriz_distancias, df_matriz_tiempos, mapping = get_matrices_distancia_tiempo_mapping(df_pedidos_entregables)
+    #obtenemos pedidos es_resto = false -> pedidos para enviar directamente
+    df_pedidos_directos = modelRepartoProductos.pedidos_directos(df_pedidos_entregables, fecha_simulacion)    
+    #obtenemos pedidos es_resto = true -> pedidos para optimizar
+    pedidos_restantes = modelRepartoProductos.pedidos_restantes(df_pedidos_entregables, fecha_simulacion)
+    #sacar los outlayers de nuestros pedidos (aquellos cuyas rutas al destino sean mayor de una jornada laboral)
+    pedidos_restantes, outlayers = modelRepartoProductos.obtener_outlayers(pedidos_restantes, df_matriz_tiempos)
+    #obtener K o num camiones
+    camiones = modelRepartoProductos.ejecutar_kmeans(pedidos_restantes, esOutlayer=False)
+    #calculamos mejor ruta de destinos por camion
+    flota_camiones = []
+    llenar_flota_camiones(camiones,flota_camiones,df_matriz_tiempos,esOutlayer=False,esDirecto=False)
+    # for i, camion in enumerate(camiones):        
+    #     destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+    #     mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
+    #     camion_main = Camion(id_camion=camion['camion_id'],
+    #            peso_maximo=int(CAPACIDAD_MAXIMA),
+    #            fecha_salida=camion['fecha_envio'],
+    #            ruta=mejor_ruta[1],
+    #            dias_viaje=1,
+    #            es_especial=0)
+    #     flota_camiones.append(camion_main)
+    if(df_pedidos_directos.empty == False):
+        llenar_flota_camiones(df_pedidos_directos,flota_camiones,df_matriz_tiempos,esOutlayer=False,esDirecto=True)
+        # for i,pedido in df_pedidos_directos:            
+        #     destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+        #     camion_main = Camion(id_camion=pedido,
+        #        peso_maximo=int(CAPACIDAD_MAXIMA),
+        #        fecha_salida=pedido['FechaFinFabricacion'],
+        #        ruta=f"[0,{pedido["DestinoEntregaID"]},0]",
+        #        dias_viaje=2,
+        #        es_especial=1)
+        #     flota_camiones.append(camion_main)
+            
+    if(len(outlayers)>0):
+        
+        camiones = modelRepartoProductos.ejecutar_kmeans(outlayers,esOutlayer = True)
+        llenar_flota_camiones(camiones,flota_camiones,df_matriz_tiempos,esOutlayer=True,esDirecto=False)
+        # for i,camion in enumerate(camiones): 
+        #     destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+        #     if(len(destinos_cluster)>1):
+        #         mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
+        #     else:
+        #         mejor_ruta = (df_matriz_tiempos[0][camion['pedidos'][0]['DestinoEntregaID']],f"[0,{camion['pedidos'][0]['DestinoEntregaID']},0]")
+        #     camion_main = Camion(id_camion=camion['camion_id'],
+        #         peso_maximo=int(CAPACIDAD_MAXIMA),
+        #         fecha_salida=camion['fecha_envio'],
+        #         ruta=mejor_ruta[1],
+        #         dias_viaje=1,
+        #         es_especial=0)
+        #     flota_camiones.append(camion_main)
+            
+    return flota_camiones
+
+def llenar_flota_camiones (camiones,flota_camiones,df_matriz_tiempos,esOutlayer, esDirecto):
+    
+    for i,camion in enumerate(camiones): 
+        destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+        if(len(destinos_cluster)>1 and esDirecto == False):
+            mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
+        else:
+            mejor_ruta = (df_matriz_tiempos[0][camion['pedidos'][0]['DestinoEntregaID']],f"[0,{camion['pedidos'][0]['DestinoEntregaID']},0]")
+
+        camion_main = Camion(id_camion=camion['camion_id'],
+            peso_maximo=int(CAPACIDAD_MAXIMA),
+            fecha_salida=camion['fecha_envio'],
+            ruta=mejor_ruta[1],
+            dias_viaje=2 if esOutlayer == True else 1,
+            es_especial= 1 if esOutlayer==True else 0)
+        flota_camiones.append(camion_main)
+    
 def main():
     st.set_page_config(page_title="Gestor de rutas", layout="wide")
     #df_pedidos = revisar_datos()
@@ -188,14 +255,28 @@ def main():
     df_pedidos_directos = modelRepartoProductos.pedidos_directos(df_pedidos_entregables, fecha_simulacion)
     
     num_camiones_directos = (len(df_pedidos_directos))
+    
     pedidos_restantes = modelRepartoProductos.pedidos_restantes(df_pedidos_entregables, fecha_simulacion)
     st.write(f"## 🚛 Pedidos a repartir hoy: {len(pedidos_restantes)} unidades 🚛 ##")
     st.dataframe(pedidos_restantes)
+    pedidos_restantes, outlayers = modelRepartoProductos.obtener_outlayers(pedidos_restantes, df_matriz_tiempos)
     inicio = time.time()
+    camiones = modelRepartoProductos.ejecutar_kmeans(pedidos_restantes)
 
-    df = modelRepartoProductos.ejecutar_kmeans_restringido(pedidos_restantes,500)
     #camiones = modelRepartoProductos.ejecutar_kmeans_tiempos(pedidos_restantes,df_matriz_tiempos)
+    #camiones = modelRepartoProductos.clustering_por_tiempo_capacidad(pedidos_restantes, df_matriz_tiempos)
+    outlayers = []
+    for i, camion in enumerate(camiones):        
+        destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+        mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
+        # if(mejor_ruta[0]> 9):
+        #     outlayer, camion = modelRouting.quitar_outlayer(camion,df_matriz_tiempos)            
+        #     destinos_cluster = [pedido['DestinoEntregaID'] for pedido in camion['pedidos']]
+        #     outlayers.append(outlayer)
+        #     mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
 
+        st.write(f"### 🚚 Camión {i+1} - {len(camion)} pedidos - Ruta optimizada: 🚚 ###")
+        st.write(mejor_ruta)
     # modelRepartoProductos.ejecutar_optimización_sobrantes(pedidos_restantes, df_matriz_distancias, df_matriz_tiempos)
     pedidos_restantes.to_csv("app/data/pedidos_restantes_ia.csv", index=False)
     df_matriz_distancias.to_csv("app/data/matriz_distancias.csv", index=False)
@@ -203,24 +284,9 @@ def main():
     tiempo_total = fin - inicio
     st.write(f"Tiempo de optimización de sobrantes: {tiempo_total:.2f} segundos")
     #st.dataframe(df_pedidos_directos)
-    resultados_directos = procesar_directos_con_matriz(df_pedidos_directos, df_matriz_distancias, df_matriz_tiempos,mapping)
-    st.write(f"## 🚚 Pedidos directos a entregar hoy: {num_camiones_directos} camiones 🚚 ##")
-    st.dataframe(resultados_directos)
-
-
-
-
-    
-
-
-
-
-
 
 
 def main_old():
-
-
     
     st.set_page_config(page_title="Gestor de rutas", layout="wide")
 
@@ -368,12 +434,6 @@ def main_old():
             unsafe_allow_html=True,
         )
         
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main()

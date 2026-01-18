@@ -2,19 +2,18 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 import openrouteservice
+import app.constantes as CONST
+import os
+import sys
+import folium
+import server 
 
 
 # Conexion con openroute para calcular rutas
-OPENROUTER_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijk5MjU0MTEzN2M4ODRiYjM5YzkyODFlNWRjZDRlOWY0IiwiaCI6Im11cm11cjY0In0="
-client = openrouteservice.Client(key=OPENROUTER_API_KEY)
+#OPENROUTER_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijk5MjU0MTEzN2M4ODRiYjM5YzkyODFlNWRjZDRlOWY0IiwiaCI6Im11cm11cjY0In0="
+client = openrouteservice.Client(key=CONST.ORS_API_KEY)
 
 
-
-#Conectar archivo base de datos
-import os
-import sys
-
-import folium
 
 
 # Ruta ABSOLUTA a la raíz del proyecto (carpeta PROYECTO1-OPTIMIZACION-RUTAS)
@@ -55,18 +54,16 @@ def main():
 
     col_left, col_middle, col_right = st.columns([1, 2, 1])
 
+        
+    camiones = server.obtener_camiones()
     
-    
-    
-    
-    
-
     # ----------------- CARGAR DATOS -----------------
     pedidos = limpiar_columnas(pd.read_csv("app/data/pedidos.csv", sep=";"))
     clientes = limpiar_columnas(pd.read_csv("app/data/clientes.csv", sep=";"))
     destinos = limpiar_columnas(pd.read_csv("app/data/destinos.csv", sep=";"))
     lineaspedidos = limpiar_columnas(pd.read_csv("app/data/lineaspedidos.csv", sep=";"))
     productos = limpiar_columnas(pd.read_csv("app/data/productos.csv", sep=";"))
+
     provincias = limpiar_columnas(pd.read_csv("app/data/provincias.csv", sep=";"))
     
     
@@ -85,24 +82,25 @@ def main():
     print(clientes.columns)'''
 
 
+
     
     
-    pedidos_full = (
-        pedidos
-        .merge(clientes, on="ClienteID")
-        .merge(destinos, left_on="DestinoEntregaID", right_on="DestinoID")
-    )  
-    lineas_full = (
-        lineaspedidos
-        .merge(productos, on="ProductoID")  # añade el nombre del producto, etc.
-    )
-    detalle = lineas_full.merge(
-        pedidos_full[["PedidoID", "FechaPedido", "nombre", "nombre_completo"]],
-        on="PedidoID"
-    )
+    # pedidos_full = (
+    #     pedidos
+    #     .merge(clientes, on="ClienteID")
+    #     .merge(destinos, left_on="DestinoEntregaID", right_on="DestinoID")
+    # )  
+    # lineas_full = (
+    #     lineaspedidos
+    #     .merge(productos, on="ProductoID")  # añade el nombre del producto, etc.
+    # )
+    # detalle = lineas_full.merge(
+    #     pedidos_full[["PedidoID", "FechaPedido", "nombre", "nombre_completo"]],
+    #     on="PedidoID"
+    # )
     
 
-    grupos = detalle.groupby("PedidoID")
+    # grupos = detalle.groupby("PedidoID")
 
 
     
@@ -127,6 +125,7 @@ def main():
             """
             
         # Añadimos el html de los pedidos
+        grupos = camiones[0]
         for pedido_id, rows in grupos:
             
             # Datos únicos del pedido

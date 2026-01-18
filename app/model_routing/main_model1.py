@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from app.algoritmos import genetico
 import app.model_routing.generar_matriz_distancias_tiempos as dist_tiempos
 import app.algoritmos.algoritmo as algoritmo
 df_pedidos_con_destinos = pd.read_csv("app/data/pedidos_con_destinos.csv")
@@ -59,6 +60,16 @@ def obtener_pedidos_productos_y_fechas():
         #df_pedidos_ia = df_pedidos_ia[nuevo_orden]
 
         st.dataframe(df_final)
+
+def genetica_por_camion(destinos_cluster, matriz_tiempos):
+    return genetico.algoritmo_genetico_por_camion(destinos_cluster, matriz_tiempos)
+
+def quitar_outlayer(camion,df_matriz_tiempos):
+    outlyer = max(camion, key=lambda p: df_matriz_tiempos[0][p['DestinoEntregaID']])
+    camion.remove(outlyer)
+    return outlyer, camion
+
+
 if __name__ == "__main__":
     st.title("Model 1 Routing Analysis")
     #obtener_pedidos_y_ejecutar_algoritmo()

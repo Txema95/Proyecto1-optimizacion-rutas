@@ -220,3 +220,85 @@ def algoritmo_genetico(df_sobrantes, matriz_km, matriz_tiempo,
             print(f"Generación {gen}: Mejor fitness = {mejor_fitness}")
 
     return mejor_individuo, mejor_fitness
+
+
+######################################################################################
+
+
+
+def calcular_fitness_tiempos(ruta, matriz_tiempos):#, df_pedidos):
+    """
+    ruta: lista de IDs de destino, ej. [0, 5, 12, 8, 0] (siempre empieza y termina en 0)
+    matriz_tiempos: matriz donde matriz[i][j] es el tiempo en horas entre i y j
+    """
+    tiempo_total = 0
+    penalizacion = 0
+    limite_jornada = 9.0
+    
+    for i in range(len(ruta) - 1):
+        actual = ruta[i]
+        siguiente = ruta[i+1]
+        
+        tiempo_tramo = matriz_tiempos[actual][siguiente]
+        tiempo_total += tiempo_tramo
+        
+        
+    return tiempo_total 
+
+def cruce_ox(padre1, padre2):
+    size = len(padre1)
+    hijo = [None] * size
+    
+    # 1. Elegir dos puntos de corte
+    a, b = sorted(random.sample(range(size), 2))
+    
+    # 2. Copiar segmento del Padre 1
+    hijo[a:b] = padre1[a:b]
+    
+    # 3. Rellenar con elementos del Padre 2 que no estén en el hijo
+    pos_actual = b
+    for item in (padre2[b:] + padre2[:b]):
+        if item not in hijo:
+            if pos_actual >= size:
+                pos_actual = 0
+            hijo[pos_actual] = item
+            pos_actual += 1
+    return hijo
+
+def mutar_swap(ruta, probabilidad=0.05):
+    if random.random() < probabilidad:
+        # Elegir dos índices al azar e intercambiarlos
+        idx1, idx2 = random.sample(range(len(ruta)), 2)
+        ruta[idx1], ruta[idx2] = ruta[idx2], ruta[idx1]
+    return ruta
+
+def algoritmo_genetico_por_camion(destinos_cluster, matriz_tiempos, generaciones=200):
+    # 'destinos_cluster' son los IDs de los pedidos asignados a este camión
+    poblacion = [random.sample(destinos_cluster, len(destinos_cluster)) for _ in range(100)]
+    
+    for gen in range(generaciones):
+        # 1. Calcular fitness de todos
+        scores = []
+        for ind in poblacion:
+            # Añadimos el origen (0) al inicio y al final
+            ruta_completa = [0] + ind + [0]
+            scores.append((calcular_fitness_tiempos(ruta_completa, matriz_tiempos), ind))
+        
+        # 2. Ordenar por mejor fitness (menor es mejor)
+        scores.sort(key=lambda x: x[0])
+        mejor_ruta = scores[0]
+        
+        # 3. Crear nueva generación (Selección + Cruce + Mutación)
+        nueva_poblacion = [scores[i][1] for i in range(10)] # Elitismo: pasan los 10 mejores
+        
+        while len(nueva_poblacion) < 100:
+            # Aquí iría la lógica de Cruce OX y Mutación Swap
+            padre1 = random.choice(nueva_poblacion[:20])
+            padre2 = random.choice(nueva_poblacion[:20])
+            hijo = cruce_ox(padre1, padre2)
+            if random.random() < 0.1: hijo = mutar_swap(hijo)
+            nueva_poblacion.append(hijo)
+            
+        poblacion = nueva_poblacion
+        
+    return mejor_ruta

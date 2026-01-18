@@ -19,8 +19,11 @@ def usar_genetica(ruta_temp, df_matriz_tiempos):
 def usar_genetica_sobrantes(df_sobrantes, matriz_km, matriz_tiempo):
     genetico.algoritmo_genetico(df_sobrantes, matriz_km, matriz_tiempo)
 
-def usar_kmeans(df):    
-    return kmeans.crear_clusters_capitados(df)
+def genetica_por_camion(destinos_cluster, matriz_tiempos):
+    return genetico.algoritmo_genetico_por_camion(destinos_cluster, matriz_tiempos)
+
+def usar_kmeans(df,esOutlayer):    
+    return kmeans.crear_clusters_capitados(df,esOutlayer)
     #return kmeans.asignar_camiones(df)
 
 def usar_kmeans_tiempos(df, matriz_tiempos):
@@ -28,3 +31,7 @@ def usar_kmeans_tiempos(df, matriz_tiempos):
 
 def usar_kmeans_restringido(df, capacidad_max):
     return kmeans.kmeans_logistica_robusto(df, capacidad_max)
+
+def clustering_por_tiempo_capacidad(df, matriz_tiempos):
+    print("Ejecutando clustering por tiempo y capacidad...")
+    return kmeans.clustering_por_tiempo_capacidad(df, matriz_tiempos)
