@@ -63,9 +63,9 @@ def pedidos_con_fecha_entrga():
             'Cantidad': 'sum',
             #'FechaPedido': 'first',
             #'DestinoEntregaID': 'first',
-            #'latitude': 'first',
-            #'longitude': 'first',
-            #'nombre_completo': 'first',
+            'latitude': 'first',
+            'longitude': 'first',
+            'nombre_completo': 'first',
             #'FechaFinFabricacion': 'max',
             'FechaCaducidad': 'min', # El camión debe cumplir la caducidad más estricta
             'ProductoID': lambda x: ', '.join(x.astype(str).unique()), # Concatena IDs únicos
