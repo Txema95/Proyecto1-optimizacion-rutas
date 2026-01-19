@@ -125,17 +125,19 @@ def main():
             """
             
         # Añadimos el html de los pedidos
-        grupos = camiones[0]
-        for pedido_id, rows in grupos:
+        pedidos = camiones[0].pedidos
+        for pedido in pedidos:
             
             # Datos únicos del pedido
-            cliente = rows["nombre"].iloc[0]
-            destino = rows["nombre_completo"].iloc[0]
+            #cliente = pedido["nombre"].iloc[0]
+            cliente = "nombre"
+            destino = pedido["nombre_completo"]
             productos_html = ""
             
             precioTotal = 0
-            diaMinCaducidad = rows['Caducidad'].iloc[0]
-            for _, r in rows.iterrows():
+            #diaMinCaducidad = pedido['Caducidad'].iloc[0]
+            diaMinCaducidad = "1231"
+            for _, r in pedido.iterrows():
             
                 if diaMinCaducidad > r['Caducidad']:
                     diaMinCaducidad = r['Caducidad']
@@ -169,11 +171,11 @@ def main():
                 margin-bottom:10px;
                 background:#fafafa;
             ">
-                <b>Pedido:</b> {pedido_id}<br>
+                <b>Pedido:</b> {-1}<br>
                 <b>Cliente:</b> {cliente}<br>
                 <b>Dirección:</b> {destino}<br>
                 <details style="margin-top:8px;">
-                <summary><b>Productos ({len(rows)}):</b></summary>
+                <summary><b>Productos ({len(pedido)}):</b></summary>
                     <ul>
                         {productos_html}
                     </ul>

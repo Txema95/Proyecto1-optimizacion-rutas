@@ -227,10 +227,13 @@ def llenar_flota_camiones (camiones,flota_camiones,df_matriz_tiempos,esOutlayer,
             mejor_ruta = modelRouting.genetica_por_camion(destinos_cluster, df_matriz_tiempos)
         else:
             mejor_ruta = (df_matriz_tiempos[0][camion['pedidos'][0]['DestinoEntregaID']],f"[0,{camion['pedidos'][0]['DestinoEntregaID']},0]")
+            
 
         camion_main = Camion(id_camion=camion['camion_id'],
             peso_maximo=int(CAPACIDAD_MAXIMA),
+            peso_ocupado=camion['cantidad_total'],
             fecha_salida=camion['fecha_envio'],
+            pedidos=camion['pedidos'],
             ruta=mejor_ruta[1],
             dias_viaje=2 if esOutlayer == True else 1,
             es_especial= 1 if esOutlayer==True else 0)

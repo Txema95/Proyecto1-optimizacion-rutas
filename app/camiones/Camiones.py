@@ -10,7 +10,9 @@ class Camion:
     def __init__(self, 
                  id_camion: int,
                  peso_maximo: int,
+                 peso_ocupado: int,
                  fecha_salida: datetime = None,
+                 pedidos : List = [],
                  ruta: str = "",
                  dias_viaje: int = 1,
                  es_especial: int = 0):
@@ -27,9 +29,12 @@ class Camion:
         self.es_especial = es_especial
         self.id_camion = id_camion
         self.peso_maximo = peso_maximo
+        self.peso_ocupado = peso_ocupado
+        self.dias_viaje = dias_viaje
         self.peso_actual = 0
         self.productos_asignados: List[int] = []
         self.destinos = []
+        self.pedidos = pedidos
         self.fecha_salida = fecha_salida
         self.fecha_vuelta = None
         self.ruta = ruta
