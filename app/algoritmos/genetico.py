@@ -72,12 +72,12 @@ def ejecutar_ag_sin_vuelta(ruta_temp, df_matriz_tiempos):
     mejor = poblacion[0]
     t_total, rutas_finales = calcular_fitness(mejor)
 
-    st.title(f"Resultados de Optimización (Máx 8h por tramo):")
-    st.write("-" * 50)
+    print(f"Resultados de Optimización (Máx 8h por tramo):")
+    print("-" * 50)
     for i, (r, t) in enumerate(rutas_finales):
-        st.write(f"Camión {i+1}: Mataró -> {' -> '.join(r)} | Tiempo: {t:.2f}h")
-    st.write("-" * 50)
-    st.write(f"Tiempo total de conducción: {t_total:.2f}h")
+        print(f"Camión {i+1}: Mataró -> {' -> '.join(r)} | Tiempo: {t:.2f}h")
+    print("-" * 50)
+    print(f"Tiempo total de conducción: {t_total:.2f}h")
 
 
 VELOCIDAD_MEDIA = 75 # km/h

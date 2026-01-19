@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "EJECUTAR APP",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "noDebug": true,
+            "args": [
+                "run",
+                "Frontend/main.py",
+                "--server.runOnSave", "false"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Main_TX",
             "type": "debugpy",
             "request": "launch",

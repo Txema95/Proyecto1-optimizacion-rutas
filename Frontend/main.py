@@ -7,7 +7,8 @@ import os
 import sys
 import folium
 import server 
-
+from datetime import date
+import app.constantes as CONST 
 
 # Conexion con openroute para calcular rutas
 #OPENROUTER_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijk5MjU0MTEzN2M4ODRiYjM5YzkyODFlNWRjZDRlOWY0IiwiaCI6Im11cm11cjY0In0="
@@ -24,8 +25,8 @@ if ROOT_DIR not in sys.path:
 
 from app.database import database
 
-
-
+if 'camiones' not in st.session_state:
+    st.session_state.camiones = []
 
 #Esta funcion limpia los nombres de las columnas
 def limpiar_columnas(df):
@@ -38,317 +39,264 @@ def limpiar_columnas(df):
     )
     return df
 
-
-
+def procesar_fecha():
+    fecha = st.session_state.fecha_usuario
+    st.toast(f"Cargando datos para el día: {fecha}")    
+    st.session_state.camiones = server.obtener_camiones()
+    if len(st.session_state.camiones)==0:
+        st.error("No hay pedidos listos para enviar en la fecha seleccionada.")
+# 2. Caché para la API de rutas (¡Muy importante!)
+@st.cache_data
+def obtener_ruta(coords):
+    """Llamada a la API de OpenRouteService"""
+    try:
+        return client.directions(coordinates=coords, profile='driving-car', format='geojson')
+    except Exception as e:
+        st.error(f"Error en ruta: {e}")
+        return None
 
 def main():
-
-    #Creamos el objeto de la base de datos
-    
+    #Creamos el objeto de la base de datos    
     # db= database()
-    st.set_page_config(page_title="Gestor de rutas", layout="wide")
-    
-    
-    # ----------------- LAYOUT -----------------
-    st.title("Proyecto 1: Optimizacion de Rutas")
-
-    col_left, col_middle, col_right = st.columns([1, 2, 1])
-
+    st.set_page_config(
+        page_title="IA Delivery SL - Optimización de Rutas",
+        page_icon="🚚",
+        layout="wide"
+    )
+    st.markdown("""
+        <style>
+        .camion-card {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 5px solid #007bff;
+            margin-bottom: 20px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+        .etiqueta {
+            color: #555;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    with st.sidebar:
+        st.header("Configuración de Flota")
         
-    camiones = server.obtener_camiones()
-    
-    # ----------------- CARGAR DATOS -----------------
-    pedidos = limpiar_columnas(pd.read_csv("app/data/pedidos.csv", sep=";"))
-    clientes = limpiar_columnas(pd.read_csv("app/data/clientes.csv", sep=";"))
-    destinos = limpiar_columnas(pd.read_csv("app/data/destinos.csv", sep=";"))
-    lineaspedidos = limpiar_columnas(pd.read_csv("app/data/lineaspedidos.csv", sep=";"))
-    productos = limpiar_columnas(pd.read_csv("app/data/productos.csv", sep=";"))
+        st.date_input(
+            "Seleccione fecha de consulta:",
+            value=date.today(),
+            key="fecha_usuario",  # Es obligatorio para usar on_change
+            on_change=procesar_fecha, # Referencia al método
+            format="DD/MM/YYYY",
+            help="Seleccione una fecha para sincronizar con el servidor de pedidos."
+        )
+        
+        st.divider()
+        st.info("Sede Central: Mataró, Barcelona")
+    # ----------------- LAYOUT -----------------
 
-    provincias = limpiar_columnas(pd.read_csv("app/data/provincias.csv", sep=";"))
-    
-    
-    '''
-    # info a mostrar
-        Id pedido
-        FechaPedido
-        Productos
-            Producto
-            Cantidad
-            Fecha caducidad
-            Precio
-        Cliente
-        Nombre destino
-    print(pedidos.columns)
-    print(clientes.columns)'''
+    # --- CUERPO PRINCIPAL ---
+    st.title("Distribución de Mercancías Perecederas")
+    st.markdown("Optimización de rutas peninsulares.")
 
+    # Separador visual
+    st.divider()
 
-
+    cargarHTML()
+        
     
-    
-    # pedidos_full = (
-    #     pedidos
-    #     .merge(clientes, on="ClienteID")
-    #     .merge(destinos, left_on="DestinoEntregaID", right_on="DestinoID")
-    # )  
-    # lineas_full = (
-    #     lineaspedidos
-    #     .merge(productos, on="ProductoID")  # añade el nombre del producto, etc.
-    # )
-    # detalle = lineas_full.merge(
-    #     pedidos_full[["PedidoID", "FechaPedido", "nombre", "nombre_completo"]],
-    #     on="PedidoID"
-    # )
-    
+def cargarHTML():
 
-    # grupos = detalle.groupby("PedidoID")
+    col_pedidos, col_mapa = st.columns([1.5, 4])
 
-
-    
     # -------- COLUMNA IZQUIERDA (Pedidos) --------
     
-    with col_left:
-        st.subheader("Lista de pedidos")
-        st.markdown("---")
-        
+    if 'camiones'  in st.session_state and len(st.session_state.camiones)>0:
+        with col_pedidos:
+            st.info("### 📋 Pedidos")
+                  
+            if 'camiones' not in st.session_state:
+                st.session_state.camiones = []
 
-
-        
-        # Construimos Todo el HTML en una sola variable
-        lista_html = """
-            <div style="
-                height:600px;
-                overflow-y: auto;
-                padding-right:10px;
-                border: 1px solid #ddd;
-                border-radius: 10px;
-            ">
-            """
+            mostrar_listado_camiones()
             
-        # Añadimos el html de los pedidos
-        pedidos = camiones[0].pedidos
-        for pedido in pedidos:
-            
-            # Datos únicos del pedido
-            #cliente = pedido["nombre"].iloc[0]
-            cliente = "nombre"
-            destino = pedido["nombre_completo"]
-            productos_html = ""
-            
-            precioTotal = 0
-            #diaMinCaducidad = pedido['Caducidad'].iloc[0]
-            diaMinCaducidad = "1231"
-            for _, r in pedido.iterrows():
-            
-                if diaMinCaducidad > r['Caducidad']:
-                    diaMinCaducidad = r['Caducidad']
-            
-            
-                productos_html += f"""<li>
-                    <details style="margin-top:8px;">
-                    <summary>
-                    <b>{r['Nombre']}:</b></summary>
-                    <ul>
-                """
-                precioTotalProducto = float(r["PrecioVenta"].replace(",", ".")) * float(r["Cantidad"])
-                productos_html += f"<li><b>Cantidad: </b>{r['Cantidad']}</li>"
-                productos_html += f"<li><b>Precio total: </b>{precioTotalProducto}€</li>"
-                productos_html += f"<li><b>Dias en caducar: </b>{r['Caducidad']}</li>"
-                precioTotal += precioTotalProducto
+        # -------- COLUMNA MEDIO (mapa) --------
+        with col_mapa:
+            st.warning("### 🗺️ Mapa de Distribución")
+            colores = ['blue', 'green', 'purple', 'orange', 'darkred', 'cadetblue']
+            if 'camiones'  in st.session_state and len(st.session_state.camiones)>0:                
+                camiones = st.session_state.camiones
+                rutas_definidas = []
                 
-                productos_html += """
-                    </ul>
-                    </details>
-                    </li>"""
-
-            
-            
-            
-            lista_html += f"""
-            <div style="
-                border:1px solid #ccc;
-                border-radius:8px;
-                padding:10px;
-                margin-bottom:10px;
-                background:#fafafa;
-            ">
-                <b>Pedido:</b> {-1}<br>
-                <b>Cliente:</b> {cliente}<br>
-                <b>Dirección:</b> {destino}<br>
-                <details style="margin-top:8px;">
-                <summary><b>Productos ({len(pedido)}):</b></summary>
-                    <ul>
-                        {productos_html}
-                    </ul>
-                </details>
-                <b>Precio total:</b> {precioTotal}€ <br>
-                <b>Dia minimo de caducidad:</b> {diaMinCaducidad} dias<br>
+                for i,camion in enumerate(camiones):
+                    lista_coords_limpias = []
+                    lista_coords_limpias.append([CONST.ORIGEN['longitude'], CONST.ORIGEN['latitude']])
+                    for ruta in camion.ruta:
+                        if ruta.empty == False:
+                            lista_coords_limpias.append([float(ruta['longitude'].to_string(index=False)), float(ruta['latitude'].to_string(index=False))])
+                        else:#solo tiene un destino
+                             lista_coords_limpias.append([float(camion.pedidos[0]['longitude']), float(camion.pedidos[0]['latitude'])])
+                        
+                    if len(lista_coords_limpias) >= 2:
+                        rutas_definidas.append({
+                            "camion": f"Camión: {camion.id_camion+1}", # O el nombre que uses
+                            "coords": lista_coords_limpias,
+                            "color": colores[i % len(colores)]
+                        })
+                destinos = []
+            else:
+                destinos = [
+                {"nombre": "Barcelona", "lat": 41.3874, "lon": 2.1686},
+                {"nombre": "Madrid",    "lat": 40.4168, "lon": -3.7038},
+                {"nombre": "Valencia",  "lat": 39.4699, "lon": -0.3763},
+            ]
                 
-            </div>
-            """
 
-        lista_html += "</div>"
+            m = folium.Map(location=[41.38, 2.16], zoom_start=8)
+            todas_las_coordenadas = []
+            for r in rutas_definidas:
+                data_ruta = obtener_ruta(r["coords"])
+                
+                if data_ruta:
+                    # Convertir GeoJSON (Lon, Lat) a Folium (Lat, Lon)
+                    line_geom = data_ruta["features"][0]["geometry"]["coordinates"]
+                    line_latlon = [[lat, lon] for lon, lat in line_geom]
+                    todas_las_coordenadas.extend(line_latlon)
+                    
+                    # Añadir línea al mapa
+                    folium.PolyLine(
+                        line_latlon, 
+                        color=r["color"], 
+                        weight=5, 
+                        tooltip=r["camion"]
+                    ).add_to(m)
 
-        st.markdown(lista_html, unsafe_allow_html=True)
-        
+            # Ajustar el zoom automáticamente si hay rutas
+            if todas_las_coordenadas:
+                m.fit_bounds(todas_las_coordenadas)
 
+            st_folium(m, width=800, height=600)
 
-    # -------- COLUMNA MEDIO (mapa) --------
-    with col_middle:
-        st.title("Mapa de rutas")
-        
+            
 
+            
+    else:
+        with col_pedidos:
+            st.info("### 📋 Pedidos")
+            st.caption("La fecha seleccionada no tiene pedidos listos para enviar.")
+            
+        with col_mapa:
+            st.warning("### 🗺️ Mapa de Distribución")
+            st.markdown("""
+            Esperando datos...  
+            Una vez seleccionada la fecha, aquí se calculará:
+            * La ruta de mínima distancia.
+            * El reparto de carga por vehículo propio.
+            """)
+            # Imagen decorativa o esquema de flujo
+            st.image("https://img.freepik.com/free-vector/delivery-logistics-concept-flat-design_23-2148249258.jpg", use_container_width=True)
 
-        
-        
-        ubicaciones = [
-            {"nombre": "Barcelona", "lat": 41.3874, "lon": 2.1686},
-            {"nombre": "Madrid",    "lat": 40.4168, "lon": -3.7038},
-            {"nombre": "Valencia",  "lat": 39.4699, "lon": -0.3763},
-        ]
-        
-        coords = [(c["lon"], c["lat"]) for c in ubicaciones]
+       
 
-        
+def mostrar_productos_compactos(pedido):
 
-        route = client.directions(
-            coordinates=coords,
-            profile="driving-car",
-            format="geojson"
-        )
+    lista_ids = str(pedido['ProductoID']).split(', ')
+    lista_nombres = pedido['Nombre'].split(', ')
+    lista_precios = str(pedido['PrecioVenta']).split(', ')
+    lista_caducidades = str(pedido['Caducidad']).split(', ')
+    lista_cantidades = str(pedido['CantidadesIndividuales']).split(', ')
 
-        # ORS devuelve geometry en (lon, lat). Folium necesita (lat, lon).
-        line_lonlat = route["features"][0]["geometry"]["coordinates"]
-        line_latlon = [(lat, lon) for lon, lat in line_lonlat]
-
-        # Centro del mapa
-        start_lat, start_lon = line_latlon[0]
-        m = folium.Map(location=[start_lat, start_lon], zoom_start=13)
-        
-        points_latlon = [(lat, lon) for lon, lat in coords]
-
-        for i, p in enumerate(points_latlon):
-            folium.Marker(
-                location=p,
-                popup= ubicaciones[i]["nombre"],
-                icon=folium.Icon(color="blue" if i not in (0, len(points_latlon)-1) else "red")
-            ).add_to(m)
-        
-
-        # Marcadores inicio/fin
-        # folium.Marker(line_latlon[0], popup="Inicio").add_to(m)
-        # folium.Marker(line_latlon[-1], popup="Fin").add_to(m)
-
-        # Ruta
-        folium.PolyLine(line_latlon, weight=5, opacity=0.8).add_to(m)
-
-        summary = route["features"][0]["properties"]["summary"]
-
-        km = summary["distance"] / 1000
-
-        
-        badge = f"""
-        <div style="
-            position: fixed;
-            top: 20px; left: 20px;
-            z-index: 9999;
-            font-size: 28px;
-            font-weight: 800;
-            background: rgba(255,255,255,0.6);
-            padding: 6px 10px;
-            border-radius: 10px;
-            ">
-            Km: {km:.2f}
-            </div>
-            """
-        m.get_root().html.add_child(folium.Element(badge))
-        st_folium(m, width=700, height=500)
-        
-        
-        
-        '''
-        
-
-        m = folium.Map(location=[41.3874, 2.1686], zoom_start=12)
-
-        
-        
-        
-        
-        
-        puntos = [
-            [41.3874, 2.1686],  # Barcelona
-            [41.3809, 2.1228],  # ejemplo punto 2
-            [41.4036, 2.1744],  # ejemplo punto 3
-        ]
-
-        m = folium.Map(location=puntos[0], zoom_start=12)
-
-        # marcadores (opcional)
-        for p in puntos:
-            folium.Marker(p).add_to(m)
-
-        # la ruta (línea)
-        folium.PolyLine(puntos, weight=5, opacity=0.8).add_to(m)
-
-        m.save("ruta.html")
-        
-        
-        folium.Marker([41.3874, 2.1686], popup="Barcelona").add_to(m)
-
-        st_folium(m, width=700, height=500)
-        '''
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        '''
-        # Contenedor grande (mapa / visualización de ruta)
+    for p_id, nom, pre, cad, cant in zip(lista_ids, lista_nombres, lista_precios,lista_caducidades, lista_cantidades):
         st.markdown(
-            """
-            <div style="border:1px solid #ddd; border-radius:10px; padding:15px; margin:20px 0;">
-                <h3 style="margin-top:0;">Mapa / Visualización de ruta</h3>
-                <div class ="mapa">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13330479.087522231!2d-17.586073735031245!3d35.3429504103601!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xc42e3783261bc8b%3A0xa6ec2c940768a3ec!2zRXNwYcOxYQ!5e0!3m2!1ses!2ses!4v1765297531897!5m2!1ses!2ses" 
-                        width="600" 
-                        height="450" 
-                        style="border:0;" 
-                        allowfullscreen="" 
-                        loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+            f"""
+            <div style="
+                border-bottom: 1px solid #ddd; 
+                padding: 5px 0px; 
+                margin-bottom: 5px;
+            ">
+                <div style="font-weight: bold; font-size: 0.9rem;">📦 {nom}</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #666;">
+                    <span>Cant: {cant} uds.</span>
+                    <span>Precio: {pre}€</span>
                 </div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )'''
-
-
-
-
-    # -------- COLUMNA DERECHA (contenido principal) --------
-    with col_right:
-        
-
-
-        # Lista de paradas de la ruta (abajo)
-        st.markdown(
-            """
-            <div style="border:1px solid #ddd; border-radius:10px; padding:15px;">
-                <h3 style="margin-top:0;">Paradas de la ruta</h3>
-            </div>
-            """,
-            unsafe_allow_html=True,
+            """, 
+            unsafe_allow_html=True
         )
-        
 
+@st.dialog("Detalle del Camión", width="large")
+def mostrar_modal_detalle(camion, index):
+    """Este es el modal que se abre al hacer clic en un camión"""
+    porcentaje_carga = float(camion.peso_ocupado) / float(camion.peso_maximo)
+    
+    st.markdown(f"### 🚛 Camión #{index + 1}")
+    ruta_str=""
+    for ruta in camion.ruta:
+        if(ruta.empty==False):
+            nom_ruta = ruta['nombre_completo'].to_string(index=False).replace("Destino","")
+        else:
+            nom_ruta = camion.pedidos[0]['nombre_completo'].replace("Destino","")
+        ruta_str +=f"- {nom_ruta} "
+    st.markdown(f"**📍 Ruta:** {ruta_str}")
+    st.divider()
+    
+    # --- MÉTRICAS DE CARGA ---
+    col_a, col_b, col_c = st.columns(3)
+    col_a.metric("Peso Ocupado", f"{camion.peso_ocupado} kg")
+    col_b.metric("Capacidad Total", f"{camion.peso_maximo} kg")
+    col_c.metric("Estado", f"{int(porcentaje_carga*100)}%")
+    
+    st.write("📊 **Progreso de carga:**")
+    st.progress(porcentaje_carga)
+    
+    st.divider()
+    
+    # --- LISTADO DE PEDIDOS ---
+    st.subheader(f"📦 Pedidos Asignados ({len(camion.pedidos)})")
+    for idx, pedido in enumerate(camion.pedidos):
+        with st.container(border=True):
+            st.markdown(f"**Pedido #{pedido['DestinoEntregaID']} - {pedido['nombre_completo']}**")
+            
+            c1, c2, c3 = st.columns(3)
+            c1.write(f"📅 **Fin Fab:** {pedido['FechaFinFabricacion']}")
+            c2.write(f"⚠️ **Caducidad:** {pedido['FechaCaducidad']}")
+            c3.write(f"🛒 **Total:** {pedido['Cantidad']} uds.")
+            
+            st.caption("🔍 Detalle de productos:")
+            # Llamamos a tu función de productos compactos
+            mostrar_productos_compactos(pedido)
 
+def mostrar_listado_camiones():
+    """Listado principal simplificado y clicable"""
+    if 'camiones' not in st.session_state or not st.session_state.camiones or len(st.session_state.camiones)==0:
+        st.info("No hay camiones disponibles.")
+        return
+    
+    camiones = st.session_state.camiones
 
+    st.subheader(f"🚚 Listado de Flota:\n\n {len(camiones)} Camiones")
+    with st.container(height=600): # Altura fija para que no crezca infinitamente
+        for i, camion in enumerate(camiones):
+            # Usamos una columna para el texto y otra para el botón
+            col_txt, col_btn = st.columns([3, 1])            
+            with col_txt:
+                st.markdown(f"**Camión #{i+1}**")
+                ruta_str="Mataro "
+                for ruta in camion.ruta:
+                    if(ruta.empty==False):
+                        nom_ruta = ruta['nombre_completo'].to_string(index=False).replace("Destino","")
+                    else:
+                        nom_ruta = camion.pedidos[0]['nombre_completo'].replace("Destino","")
+                    ruta_str +=f"- {nom_ruta} "
+                st.caption(f"📍 {ruta_str} \n\n Duración: {float(camion.tiempo_ruta)} H.")
+            
+            with col_btn:
+                # El botón dispara el modal
+                if st.button("Ver Detalle", key=f"btn_{i}", use_container_width=True):
+                    mostrar_modal_detalle(camion, i)
+            
+            st.divider()
 
 
 

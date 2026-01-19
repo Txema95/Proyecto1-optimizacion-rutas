@@ -8,3 +8,7 @@
     - ligero: 1800 kg
     - mediano: 3500 kg
     - pesado: 7000 kg
+
+se ha instalado en el linux 
+pip streamlit-folium install sqlalchemy dotenv openrouteservice 
+scikit-learn matplotlib plotly

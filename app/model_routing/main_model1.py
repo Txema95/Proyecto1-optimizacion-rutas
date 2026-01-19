@@ -1,4 +1,4 @@
-import streamlit as st
+
 import pandas as pd
 from app.algoritmos import genetico
 import app.model_routing.generar_matriz_distancias_tiempos as dist_tiempos
@@ -18,10 +18,7 @@ def obtener_pedidos_y_ejecutar_algoritmo():
 
     ruta_temp = df_pedidos_con_destinos['nombre_completo'].tolist()#ejemplo = ['Barcelona', 'Girona', 'Palma', 'Tarragona', 'Lleida', 'Las Palmas'....]
     
-    #st.dataframe(df_pedidos_con_destinos)
     df_matriz_distancias, df_matriz_tiempos, mapping = dist_tiempos.get_matrices(df_pedidos_con_destinos)
-    #st.dataframe(df_matriz_distancias)
-    #st.dataframe(df_matriz_tiempos)
     ruta_temp = list(df_matriz_tiempos)
     #algoritmousar_fuerza_bruta(df_matriz_distancias)
     algoritmo.usar_genetica(ruta_temp, df_matriz_tiempos)
@@ -59,7 +56,6 @@ def obtener_pedidos_productos_y_fechas():
         #df_final = df_final[nuevo_orden]
         #df_pedidos_ia = df_pedidos_ia[nuevo_orden]
 
-        st.dataframe(df_final)
 
 def genetica_por_camion(destinos_cluster, matriz_tiempos):
     return genetico.algoritmo_genetico_por_camion(destinos_cluster, matriz_tiempos)
@@ -71,6 +67,5 @@ def quitar_outlayer(camion,df_matriz_tiempos):
 
 
 if __name__ == "__main__":
-    st.title("Model 1 Routing Analysis")
     #obtener_pedidos_y_ejecutar_algoritmo()
     obtener_pedidos_productos_y_fechas()

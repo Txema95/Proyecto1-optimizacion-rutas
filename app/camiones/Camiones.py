@@ -13,6 +13,7 @@ class Camion:
                  peso_ocupado: int,
                  fecha_salida: datetime = None,
                  pedidos : List = [],
+                 tiempo_ruta: float = 0.0,
                  ruta: str = "",
                  dias_viaje: int = 1,
                  es_especial: int = 0):
@@ -37,6 +38,7 @@ class Camion:
         self.pedidos = pedidos
         self.fecha_salida = fecha_salida
         self.fecha_vuelta = None
+        self.tiempo_ruta = tiempo_ruta
         self.ruta = ruta
         self.estado = "disponible"  # disponible, en_ruta
         
