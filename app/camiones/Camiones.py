@@ -10,7 +10,7 @@ class Camion:
     def __init__(self, 
                  id_camion: int,
                  peso_maximo: int,
-                 peso_ocupado: int,
+                 peso_ocupado: int = 0,
                  fecha_salida: datetime = None,
                  pedidos : List = [],
                  tiempo_ruta: float = 0.0,
