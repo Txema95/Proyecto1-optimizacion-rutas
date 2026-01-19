@@ -10,14 +10,14 @@ df_matriz = pd.read_csv('matriz_tiempos_destinos.csv', index_col=0)
 Peso_maximo = 1800
 
 # ========== VARIABLES GLOBALES PERSISTENTES ==========
-camiones_creados = []      # TODOS los camiones (persistentes)
-camiones_normales = []     # Camiones normales (persistentes)
-camiones_especiales = []   # Camiones especiales (persistentes)
-Id_camiones = 0           # Contador global de IDs
-pedidos_pendientes = []   # Pedidos pospuestos (tiempo > 9h o de camiones eliminados)
+camiones_creados = []     
+camiones_normales = []    
+camiones_especiales = []  
+Id_camiones = 0           
+pedidos_pendientes = []   
 expediciones_activas = [] 
 
-# ========== FUNCIONES PARA RUTAS PRE-CALCULADAS ==========
+
 def registrar_expedicion_salida(camion, fecha_salida):
     """Registra cuando un camión sale en ruta y guarda en CSV."""
     # Calcular tiempo de ruta
@@ -80,14 +80,6 @@ def registrar_expedicion_salida(camion, fecha_salida):
     # Guardar en CSV inmediatamente
     guardar_expedicion_csv(expedicion)
     
-    if camion.destinos and len(camion.destinos) > 0:
-        print(f"    📝 Expedición registrada: Retorna el {fecha_retorno} ({dias_retorno} días)")
-        print(f"      📊 Guardado en CSV: Camión {camion.id_camion}, {total_productos} productos")
-        if fecha_caducidad_proxima:
-            print(f"      ⏰ Caducidad más próxima: {fecha_caducidad_proxima} ({dias_caducidad_proxima} días)")
-    else:
-        print("    ⚠️ Expedición registrada sin destinos")
-    
     return expedicion
 
 def cargar_rutas_precalculadas(archivo="rutas_completas.csv"):
@@ -115,14 +107,14 @@ def cargar_rutas_precalculadas(archivo="rutas_completas.csv"):
         
         # Ordenar por eficiencia (mejores rutas primero)
         rutas.sort(key=lambda x: x['eficiencia'], reverse=True)
-        print(f"  ✓ Rutas pre-calculadas cargadas: {len(rutas)}")
+        print(f"Rutas pre-calculadas cargadas: {len(rutas)}")
         return rutas
         
     except FileNotFoundError:
-        print(f"  ⚠️ Archivo {archivo} no encontrado. Continuando sin rutas pre-calculadas.")
+        print(f"Archivo {archivo} no encontrado. Continuando sin rutas pre-calculadas.")
         return []
     except Exception as e:
-        print(f"  ⚠️ Error cargando rutas pre-calculadas: {e}")
+        print(f"Error cargando rutas pre-calculadas: {e}")
         return []
 
 def buscar_rutas_para_destino(destino_id, rutas_precalculadas):
@@ -169,16 +161,15 @@ def asignar_pedido_a_ruta_precalculada(pedido, rutas_precalculadas, camiones_exi
                 destinos_comunes = set(camion.destinos) & set(ruta['destinos'])
                 if destinos_comunes:  # Si hay al menos un destino común
                     return camion
-    
     return None
 
-# ========== FUNCIONES DE CONSOLIDACIÓN Y DIVISIÓN INTELIGENTE ==========
 
-def consolidar_destinos_duplicados(camiones_normales, df_matriz):
+
+def consolidar_destinos_duplicados(camiones_normales):
     """
     Combina camiones que tienen los mismos destinos.
     """
-    print("\n🔄 CONSOLIDANDO DESTINOS DUPLICADOS")
+    print("CONSOLIDANDO DESTINOS DUPLICADOS")
     
     # Agrupar camiones por destino
     grupos = {}
@@ -215,7 +206,7 @@ def consolidar_destinos_duplicados(camiones_normales, df_matriz):
                 # Verificar si cabe todo
                 peso_total = camion_base.peso_actual + otro_camion.peso_actual
                 if peso_total <= camion_base.peso_maximo:
-                    print(f"    ✓ Consolidando camión {otro_camion.id_camion} en {camion_base.id_camion}")
+                    print(f"     Consolidando camión {otro_camion.id_camion} en {camion_base.id_camion}")
                     
                     # Mover pedidos
                     pedidos_a_mover = otro_camion.productos_asignados.copy()
@@ -249,9 +240,9 @@ def consolidar_destinos_duplicados(camiones_normales, df_matriz):
             camiones_creados.remove(camion)
     
     if consolidaciones > 0:
-        print(f"  ✅ Total consolidaciones: {consolidaciones}")
+        print(f"Total consolidaciones: {consolidaciones}")
     else:
-        print("  ℹ️ No se encontraron consolidaciones necesarias")
+        print("No se encontraron consolidaciones necesarias")
     
     return consolidaciones
 
@@ -265,11 +256,6 @@ def dividir_ruta_inteligente(camion, df_matriz, tiempo_max=18.0):
     
     if camion.tiempo_final <= tiempo_max:
         return [camion]
-    
-    print(f"\n🔍 DIVIDIENDO INTELIGENTEMENTE CAMIÓN {camion.id_camion}")
-    print(f"  Tiempo: {camion.tiempo_final:.2f}h > {tiempo_max}h")
-    print(f"  Destinos: {camion.destinos} ({len(camion.destinos)} destinos)")
-    print(f"  Carga: {camion.peso_actual}/{camion.peso_maximo}kg")
     
     # Ordenar destinos por tiempo desde Mataró (más cercanos primero)
     destinos_ordenados = sorted(camion.destinos, 
@@ -307,7 +293,7 @@ def dividir_ruta_inteligente(camion, df_matriz, tiempo_max=18.0):
             print(f"    Destino individual {destinos_ordenados[i]}: {tiempo_individual:.2f}h")
             i += 1
     
-    print(f"  ✓ Propuesta de división en {len(rutas_propuestas)} rutas")
+    print(f"Propuesta de división en {len(rutas_propuestas)} rutas")
     
     # Crear camiones para cada ruta propuesta
     nuevos_camiones = []
@@ -355,8 +341,8 @@ def crear_camion_desde_destinos(destinos, camion_original, df_matriz):
     
     return None
 
-# ========== FUNCIONES PRINCIPALES ==========
 
+# Main
 def comprobar_pedidos_fecha_produccion():
     df = pd.read_csv("productos_fabricados.csv")
     fechas_unicas = df['FechaFinFabricacion'].unique()
@@ -369,14 +355,11 @@ def comprobar_pedidos_fecha_produccion():
         print(f"\n{'='*80}")
         print(f"📅 FECHA: {fecha} - DÍA {cont}")
         print(f"{'='*80}")
-        
-        
         # Reparar expediciones si es necesario
         if expediciones_activas:
             reparar_expediciones_existentes()
         
         # Actualizar disponibilidad
-        print("\n🔄 ACTUALIZANDO DISPONIBILIDAD")
         actualizar_disponibilidad_camiones(fecha)
         
         # Mostrar estado
@@ -428,28 +411,18 @@ def procesar_pedidos_pendientes(fecha, pedidos_pendientes_lista):
         cantidad = pedido['Cantidad']
         tiempo = df_matriz.loc[0, str(destino_id)]
         
-        print(f"  {i+1}. Pedido pendiente - Destino {destino_id}, Cantidad {cantidad}")
-        
-        # Mostrar caducidad si está disponible
-        if 'FechaCaducidad' in pedido:
-            dias_restantes = (datetime.strptime(pedido['FechaCaducidad'], '%Y-%m-%d') - 
-                            datetime.strptime(fecha, '%Y-%m-%d')).days
-            print(f"     Caduca: {pedido['FechaCaducidad']} ({dias_restantes} días)")
-        
         if tiempo >= 8.5:
-            print("    → Buscando camión especial...")
             camion_especial = buscar_camion_especial_destino(destino_id)
             
             if camion_especial and camion_especial.agregar_producto(pedido, cantidad, destino_id):
-                print(f"      ✓ Agregado a camión especial existente {camion_especial.id_camion}")
+                print(f"Agregado a camión especial existente {camion_especial.id_camion}")
             else:
                 nuevo_camion = crear_camion_ruta_especial(destino_id, fecha)
                 if nuevo_camion.agregar_producto(pedido, cantidad, destino_id):
                     camiones_especiales.append(nuevo_camion)
                     camiones_creados.append(nuevo_camion)
-                    print(f"      ✓ Nuevo camión especial {nuevo_camion.id_camion} creado")
+                    print(f"Nuevo camión especial {nuevo_camion.id_camion} creado")
         else:
-            print("    → Buscando camión normal...")
             camion_normal = agregar_pedido_normal_a_camion(pedido, fecha, destino_id, cantidad)
             if not camion_normal:
                 camion_normal = crear_nuevo_camion_normal(fecha, destino_id)
@@ -481,20 +454,17 @@ def procesar_pedidos_nuevos(pedidos_entrega, fecha):
         print(f"Destino {destino_id}: {tiempo}h → ", end="")
         
         if tiempo >= 8.5:
-            print("Camión especial")
             camion_especial = buscar_camion_especial_destino(destino_id)
             
             if camion_especial and camion_especial.agregar_producto(pedido_dict, cantidad, destino_id):
-                print(f"  ✓ Agregado a camión especial existente {camion_especial.id_camion}")
+                print(f"Agregado a camión especial existente {camion_especial.id_camion}")
             else:
                 nuevo_camion = crear_camion_ruta_especial(destino_id, fecha)
                 if nuevo_camion.agregar_producto(pedido_dict, cantidad, destino_id):
                     camiones_especiales.append(nuevo_camion)
                     camiones_creados.append(nuevo_camion)
-                    print(f"  ✓ Nuevo camión especial {nuevo_camion.id_camion} creado")
+                    print(f"Nuevo camión especial {nuevo_camion.id_camion} creado")
         else:
-            print("Ruta normal")
-            
             # INTENTAR USAR RUTA PRE-CALCULADA
             camion_asignado = None
             if rutas_precalculadas:
@@ -504,7 +474,7 @@ def procesar_pedidos_nuevos(pedidos_entrega, fecha):
             
             if camion_asignado:
                 if camion_asignado.agregar_producto(pedido_dict, cantidad, destino_id):
-                    print(f"  ✓ Agregado a camión {camion_asignado.id_camion} (ruta pre-calculada)")
+                    print(f"Agregado a camión {camion_asignado.id_camion} (ruta pre-calculada)")
                     continue
             
             # Si no encontró ruta pre-calculada, usar la lógica normal
@@ -512,7 +482,7 @@ def procesar_pedidos_nuevos(pedidos_entrega, fecha):
             if not camion_normal:
                 camion_normal = crear_nuevo_camion_normal(fecha, destino_id)
                 camion_normal.agregar_producto(pedido_dict, cantidad, destino_id)
-# ========== FUNCIÓN MEJORADA DE AGREGAR PEDIDOS NORMALES ==========
+
 
 def agregar_pedido_normal_a_camion(pedido, fecha, destino_id, cantidad):
     """Busca o crea camión normal manteniendo información de caducidad."""
@@ -583,20 +553,17 @@ def agregar_pedido_normal_a_camion(pedido, fecha, destino_id, cantidad):
         )
         camiones_normales.append(camion_preferido)
         camiones_creados.append(camion_preferido)
-        print(f"  🚚 Nuevo camión normal {Id_camiones}")
+        print(f"Nuevo camión normal {Id_camiones}")
     
     # Agregar producto
     if camion_preferido.agregar_producto(pedido, cantidad, destino_id):
-        print(f"  ✓ Agregado al camión {camion_preferido.id_camion}")
-        print(f"    Destinos: {camion_preferido.destinos}")
-        print(f"    Producto ID: {producto_id}")
         if isinstance(pedido, dict) and 'FechaCaducidad' in pedido:
             dias = (datetime.strptime(pedido['FechaCaducidad'], '%Y-%m-%d') - 
                    datetime.strptime(fecha, '%Y-%m-%d')).days
             print(f"    Caduca en: {dias} días")
         return camion_preferido
     
-    print(f"  ✗ Error: Sin capacidad en camión {camion_preferido.id_camion}")
+    print(f"Error: Sin capacidad en camión {camion_preferido.id_camion}")
     return None
 
 def tiene_mismo_producto(camion, producto_id):
@@ -667,7 +634,7 @@ def optimizar_camiones_con_rutas_precalculadas(fecha):
                 mejor_ruta = ruta
         
         if mejor_ruta and mejor_coincidencia >= 2:
-            print(f"  ✓ Ruta pre-calculada encontrada: {mejor_ruta['id']}")
+            print(f"   Ruta pre-calculada encontrada: {mejor_ruta['id']}")
             print(f"    Destinos ruta: {mejor_ruta['destinos']}")
             print(f"    Coinciden {mejor_coincidencia} de {len(camion.destinos)} destinos")
             print(f"    Tiempo estimado ruta: {mejor_ruta['tiempo_estimado']}h")
@@ -716,10 +683,6 @@ def verificar_y_dividir_camiones(fecha):
                 camion.tiempo_final = 0
             if hasattr(camion, 'ruta_final'):
                 camion.ruta_final = None
-            
-            print(f"\nCamión normal {camion.id_camion}:")
-            print("  ⚪ VACÍO - Sin destinos ni carga")
-            print("  ⏳ VACÍO: Espera mañana (sin costo de tiempo)")
             camiones_vacios.append(camion)
             continue
         
@@ -751,14 +714,14 @@ def verificar_y_dividir_camiones(fecha):
             dias_caducidad = float('inf')
         
         print(f"\nCamión normal {camion.id_camion}:")
-        print(f"  Destinos: {camion.destinos}")
-        print(f"  Carga: {camion.peso_actual}/{camion.peso_maximo}kg ({porcentaje_ocupacion:.1f}%)")
+        print(f"Destinos: {camion.destinos}")
+        print(f"Carga: {camion.peso_actual}/{camion.peso_maximo}kg ({porcentaje_ocupacion:.1f}%)")
         
         # Mostrar tiempo solo si hay destinos
         if camion.destinos and len(camion.destinos) > 0:
-            print(f"  Tiempo estimado: {tiempo_total:.2f}h")
+            print(f"Tiempo estimado: {tiempo_total:.2f}h")
         else:
-            print("  Tiempo estimado: 0.00h (sin destinos)")
+            print("Tiempo estimado: 0.00h (sin destinos)")
         
         if dias_caducidad is not None and dias_caducidad != float('inf'):
             print(f"  Caducidad más cercana: {dias_caducidad} días")
@@ -767,46 +730,44 @@ def verificar_y_dividir_camiones(fecha):
         
         # 1. Si tiempo > 18h y tiene destinos → Se divide
         if tiempo_total > 18.0 and camion.destinos and len(camion.destinos) > 0:
-            print(f"  ⚠️ TIEMPO EXCEDIDO ({tiempo_total:.2f}h > 18h): Se divide")
+            print(f"   TIEMPO EXCEDIDO ({tiempo_total:.2f}h > 18h): Se divide")
             camiones_a_dividir.append(camion)
         
         # 2. Si tiempo <= 18h y ocupación >= 75% → Sale hoy
         elif tiempo_total <= 18.0 and porcentaje_ocupacion >= 75.0:
-            print("  ✅ CUMPLE: Sale hoy (ocupación ≥75%)")
+            print("   CUMPLE: Sale hoy (ocupación ≥75%)")
             camion.estado = "en_ruta"
             camiones_que_salen.append(camion)
             # Registrar la expedición cuando el camión sale
             if camion.destinos and len(camion.destinos) > 0:
                 registrar_expedicion_salida(camion, fecha)
             else:
-                print(f"  ⚠️ ADVERTENCIA: Camión {camion.id_camion} sale sin destinos")
+                print(f"   ADVERTENCIA: Camión {camion.id_camion} sale sin destinos")
         
         # 3. Si tiempo <= 18h y ocupación entre 50-75% → Zona de decisión
         elif tiempo_total <= 18.0 and porcentaje_ocupacion >= 50.0:
             # Zona de decisión (50-75%)
             if es_urgente:
-                print(f"  ⚡ CON CADUCIDAD URGENTE: Sale hoy ({porcentaje_ocupacion:.1f}% ocupación)")
-                print("     (Productos caducan en ≤2 días)")
+                print(f"CON CADUCIDAD URGENTE: Sale hoy ({porcentaje_ocupacion:.1f}% ocupación)")
                 camion.estado = "en_ruta"
                 camiones_que_salen.append(camion)
                 # Registrar la expedición cuando el camión sale
                 if camion.destinos and len(camion.destinos) > 0:
                     registrar_expedicion_salida(camion, fecha)
                 else:
-                    print(f"  ⚠️ ADVERTENCIA: Camión {camion.id_camion} sale sin destinos")
+                    print(f"   ADVERTENCIA: Camión {camion.id_camion} sale sin destinos")
             else:
-                print("  ⏳ OCUPACIÓN MEDIA (50-75%): Espera mañana")
-                print("     (Sin urgencia de caducidad)")
+                print("OCUPACIÓN MEDIA (50-75%): Espera mañana")
                 camiones_con_baja_ocupacion.append(camion)
         
         # 4. Si ocupación < 50% → Espera mañana
         elif porcentaje_ocupacion < 50.0:
-            print("  ⏳ BAJA OCUPACIÓN (<50%): Espera mañana")
+            print("BAJA OCUPACIÓN (<50%): Espera mañana")
             camiones_con_baja_ocupacion.append(camion)
         
         # 5. Caso especial: Sin destinos pero con carga (no debería pasar)
         elif not camion.destinos or len(camion.destinos) == 0:
-            print("  ⚠️ SIN DESTINOS: Espera asignación de destinos")
+            print("SIN DESTINOS: Espera asignación de destinos")
             camiones_con_baja_ocupacion.append(camion)
     
     # Dividir camiones grandes (mantener misma lógica)
@@ -833,16 +794,16 @@ def verificar_y_dividir_camiones(fecha):
                     nuevo_camion.estado = "en_ruta"
                     camiones_que_salen.append(nuevo_camion)
                     camiones_creados.append(nuevo_camion)
-                    print(f"  ✅ Camión {nuevo_camion.id_camion} creado y sale hoy")
+                    print(f"Camión {nuevo_camion.id_camion} creado y sale hoy")
                     # Registrar expedición para camiones divididos que salen
                     if nuevo_camion.destinos and len(nuevo_camion.destinos) > 0:
                         registrar_expedicion_salida(nuevo_camion, fecha)
                 else:
                     camiones_normales.append(nuevo_camion)
                     camiones_creados.append(nuevo_camion)
-                    print(f"  ⏳ Camión {nuevo_camion.id_camion} creado, espera para mañana")
+                    print(f"Camión {nuevo_camion.id_camion} creado, espera para mañana")
         else:
-            print(f"  ⚠️ No se puede dividir camión {camion.id_camion}: no tiene destinos")
+            print(f"   No se puede dividir camión {camion.id_camion}: no tiene destinos")
     
     print(f"\n{'='*60}")
     print("RESUMEN CON CADUCIDAD:")
@@ -855,23 +816,22 @@ def verificar_y_dividir_camiones(fecha):
     
     # Mostrar expediciones registradas hoy
     if camiones_que_salen:
-        print(f"\n📋 EXPEDICIONES REGISTRADAS HOY ({fecha}):")
+        print(f"\n EXPEDICIONES REGISTRADAS HOY ({fecha}):")
         for camion in camiones_que_salen:
             # Buscar la expedición recién registrada
             expedicion_encontrada = False
             for expedicion in expediciones_activas:
                 if expedicion['id_camion'] == camion.id_camion and expedicion['fecha_salida'] == fecha:
-                    print(f"  • Camión {camion.id_camion}: Retorna el {expedicion['fecha_retorno_estimada']}")
+                    print(f"Camión {camion.id_camion}: Retorna el {expedicion['fecha_retorno_estimada']}")
                     expedicion_encontrada = True
                     break
             
             if not expedicion_encontrada and camion.destinos and len(camion.destinos) > 0:
-                print(f"  ⚠️ Camión {camion.id_camion}: Expedición no registrada (error)")
+                print(f"Camión {camion.id_camion}: Expedición no registrada (error)")
     
     # Advertencia si hay muchos camiones vacíos
     if len(camiones_vacios) > 5:
-        print(f"\n⚠️  ADVERTENCIA: Hay {len(camiones_vacios)} camiones vacíos")
-        print("   Considera limpiar camiones vacíos persistentes")
+        print(f"\n  ADVERTENCIA: Hay {len(camiones_vacios)} camiones vacíos")
     
     print(f"{'='*60}")
 
@@ -888,7 +848,7 @@ def buscar_camion_especial_destino(destino_id):
             return camion
     return None
 
-def crear_nuevo_camion_normal(fecha, destino_id):
+def crear_nuevo_camion_normal(fecha):
     """Crea un nuevo camión normal (función de respaldo)."""
     global Id_camiones, camiones_normales, camiones_creados
     
@@ -901,10 +861,10 @@ def crear_nuevo_camion_normal(fecha, destino_id):
     )
     camiones_normales.append(nuevo_camion)
     camiones_creados.append(nuevo_camion)
-    print(f"  🚚 Nuevo camión normal {Id_camiones} creado (respaldado)")
+    print(f"Nuevo camión normal {Id_camiones} creado (respaldado)")
     return nuevo_camion
 
-def crear_camion_ruta_especial(destino_id, fecha_salida):
+def crear_camion_ruta_especial(fecha_salida):
     """Crea un nuevo camión para rutas especiales."""
     global Id_camiones
     Id_camiones += 1
@@ -918,20 +878,14 @@ def crear_camion_ruta_especial(destino_id, fecha_salida):
 # ========== FUNCIONES RESTANTES (sin cambios significativos) ==========
 
 def mostrar_estado_camiones_actual(fecha):
-    print(f"\n📊 ESTADO AL INICIO DEL DÍA {fecha}:")
+    print(f"\nESTADO AL INICIO DEL DÍA {fecha}:")
     print(f"Camiones especiales: {len(camiones_especiales)}")
     print(f"Camiones normales: {len(camiones_normales)}")
     print(f"Pedidos pendientes: {len(pedidos_pendientes)}")
 
 def optimizar_rutas_fecha_actual(fecha):
     """Función original de optimización (mantenida para compatibilidad)."""
-    print(f"\n{'='*60}")
-    print(f"OPTIMIZANDO RUTAS - FECHA {fecha}")
-    print(f"{'='*60}")
-    
     if camiones_normales:
-        print(f"\nCamiones normales a optimizar: {len(camiones_normales)}")
-        
         for camion in camiones_normales:
             if len(camion.destinos) > 0 and camion.estado != "en_ruta":
                 print(f"\n{'─'*40}")
@@ -988,8 +942,8 @@ def seleccionar_mejor_ruta_automatico(camion):
             tiempos.sort(key=lambda x: x[1])
             mejor_algoritmo, mejor_tiempo = tiempos[0]
             
-            print(f"  ✓ Seleccionado: {mejor_algoritmo.replace('_', ' ').title()}")
-            print(f"    Tiempo: {mejor_tiempo:.2f}h")
+            print(f"Seleccionado: {mejor_algoritmo.replace('_', ' ').title()}")
+            print(f"Tiempo: {mejor_tiempo:.2f}h")
             
             if mejor_algoritmo == 'fuerza_bruta':
                 camion.ruta_final = camion.ruta_fuerza_bruta
@@ -1018,7 +972,7 @@ def mostrar_resumen_fecha(fecha):
                                    if (c.peso_actual > 0 or 
                                        (hasattr(c, 'destinos') and c.destinos))]
     
-    print("\n📊 ESTADO AL FINAL DEL DÍA:")
+    print("\nESTADO AL FINAL DEL DÍA:")
     print(f"Camiones especiales activos: {len(camiones_especiales_activos)}")
     print(f"Camiones normales con carga: {len(camiones_normales_con_carga)}")
     print(f"Camiones normales vacíos: {len(camiones_normales_activos) - len(camiones_normales_con_carga)}")
@@ -1027,21 +981,21 @@ def mostrar_resumen_fecha(fecha):
     
     # Mostrar expediciones activas
     if expediciones_activas:
-        print(f"\n🚛 EXPEDICIONES EN CURSO ({len(expediciones_activas)}):")
+        print(f"\nEXPEDICIONES EN CURSO ({len(expediciones_activas)}):")
         for exp in expediciones_activas:
             if exp['estado'] == 'en_viaje':
-                print(f"  • Camión {exp['id_camion']}: Salió {exp['fecha_salida']}, Retorna {exp['fecha_retorno_estimada']}")
-                print(f"    Destinos: {exp['destinos']}")
+                print(f"Camión {exp['id_camion']}: Salió {exp['fecha_salida']}, Retorna {exp['fecha_retorno_estimada']}")
+                print(f"Destinos: {exp['destinos']}")
     
     if camiones_especiales_activos:
-        print("\n🔵 CAMIONES ESPECIALES (persistentes):")
+        print("\n CAMIONES ESPECIALES (persistentes):")
         for camion in camiones_especiales_activos:
             if camion.peso_actual > 0:  # Solo mostrar si tienen carga
-                print(f"  Camión {camion.id_camion}: Destino {camion.destinos}, " +
+                print(f"Camión {camion.id_camion}: Destino {camion.destinos}, " +
                       f"Carga: {camion.peso_actual}/{camion.peso_maximo}kg")
     
     if camiones_normales_con_carga:
-        print("\n🟢 CAMIONES NORMALES CON CARGA:")
+        print("\n CAMIONES NORMALES CON CARGA:")
         for camion in camiones_normales_con_carga:
             tiempo = camion.tiempo_final if hasattr(camion, 'tiempo_final') else estimar_tiempo_ruta(camion.destinos)
             ocupacion = (camion.peso_actual / camion.peso_maximo) * 100
@@ -1080,13 +1034,14 @@ def extraer_info_pedido(pedido):
     if info['DestinoEntregaID'] is not None and info['Cantidad'] is not None:
         return info
     else:
-        print(f"⚠️ No se pudo extraer información completa del pedido: {pedido}")
+        print(f" No se pudo extraer información completa del pedido: {pedido}")
         return None
+    
 def mostrar_camiones_en_ruta():
     """Muestra todos los camiones que están actualmente en ruta."""
     
     print(f"\n{'='*80}")
-    print("🚚 CAMIONES EN RUTA (ACTIVOS)")
+    print("CAMIONES EN RUTA (ACTIVOS)")
     print(f"{'='*80}")
     print(f"Camiones en memoria actualmente: {len(camiones_creados)}")
     # Filtrar camiones en ruta
@@ -1098,7 +1053,7 @@ def mostrar_camiones_en_ruta():
         print("No hay camiones en ruta en este momento.")
         return
     
-    print("\n📊 RESUMEN:")
+    print("\n RESUMEN:")
     print(f"  Total camiones en ruta: {len(camiones_en_ruta)}")
     print(f"  Camiones especiales en ruta: {len(camiones_especiales_ruta)}")
     print(f"  Camiones normales en ruta: {len(camiones_normales_ruta)}")
@@ -1108,7 +1063,7 @@ def mostrar_camiones_en_ruta():
     tiempo_total = sum(c.tiempo_final for c in camiones_en_ruta if hasattr(c, 'tiempo_final'))
     destinos_total = sum(len(c.destinos) for c in camiones_en_ruta)
     
-    print("\n📈 ESTADÍSTICAS:")
+    print("\nESTADÍSTICAS:")
     print(f"  Peso total transportado: {peso_total:,}kg")
     print(f"  Tiempo total de ruta: {tiempo_total:.2f}h")
     print(f"  Destinos totales cubiertos: {destinos_total}")
@@ -1116,29 +1071,29 @@ def mostrar_camiones_en_ruta():
     
     # Mostrar camiones especiales en ruta
     if camiones_especiales_ruta:
-        print("\n🔵 CAMIONES ESPECIALES EN RUTA:")
+        print("\n CAMIONES ESPECIALES EN RUTA:")
         for camion in camiones_especiales_ruta:
             tiempo = camion.tiempo_final if hasattr(camion, 'tiempo_final') else df_matriz.loc[0, str(camion.destinos[0])] * 2
-            print(f"  • Camión {camion.id_camion}:")
-            print(f"     Destinos: {camion.destinos}")
-            print(f"     Peso: {camion.peso_actual}/{camion.peso_maximo}kg ({(camion.peso_actual/camion.peso_maximo*100):.1f}%)")
-            print(f"     Tiempo estimado: {tiempo:.2f}h")
+            print(f"Camión {camion.id_camion}:")
+            print(f"Destinos: {camion.destinos}")
+            print(f"Peso: {camion.peso_actual}/{camion.peso_maximo}kg ({(camion.peso_actual/camion.peso_maximo*100):.1f}%)")
+            print(f"Tiempo estimado: {tiempo:.2f}h")
             if hasattr(camion, 'ruta_final') and camion.ruta_final:
-                print(f"     Ruta: {camion.ruta_final}")
+                print(f"Ruta: {camion.ruta_final}")
     
     # Mostrar camiones normales en ruta
     if camiones_normales_ruta:
-        print("\n🟢 CAMIONES NORMALES EN RUTA:")
+        print("\nCAMIONES NORMALES EN RUTA:")
         for camion in camiones_normales_ruta:
             tiempo = camion.tiempo_final if hasattr(camion, 'tiempo_final') else estimar_tiempo_ruta(camion.destinos)
-            print(f"  • Camión {camion.id_camion}:")
-            print(f"     Destinos: {camion.destinos}")
-            print(f"     Peso: {camion.peso_actual}/{camion.peso_maximo}kg ({(camion.peso_actual/camion.peso_maximo*100):.1f}%)")
-            print(f"     Tiempo: {tiempo:.2f}h")
+            print(f"Camión {camion.id_camion}:")
+            print(f"Destinos: {camion.destinos}")
+            print(f"Peso: {camion.peso_actual}/{camion.peso_maximo}kg ({(camion.peso_actual/camion.peso_maximo*100):.1f}%)")
+            print(f"Tiempo: {tiempo:.2f}h")
             if hasattr(camion, 'ruta_final') and camion.ruta_final:
-                print(f"     Ruta óptima: {camion.ruta_final}")
+                print(f"Ruta óptima: {camion.ruta_final}")
             if hasattr(camion, 'eficiencia'):
-                print(f"     Eficiencia: {camion.eficiencia:.3f} destinos/hora")
+                print(f"Eficiencia: {camion.eficiencia:.3f} destinos/hora")
     
     # Mostrar por fecha de salida (si están agrupados)
     fechas_salida = {}
@@ -1149,7 +1104,7 @@ def mostrar_camiones_en_ruta():
         fechas_salida[fecha].append(camion)
     
     if len(fechas_salida) > 1:
-        print("\n📅 DISTRIBUCIÓN POR FECHA DE SALIDA:")
+        print("\n DISTRIBUCIÓN POR FECHA DE SALIDA:")
         for fecha, camiones_fecha in sorted(fechas_salida.items()):
             print(f"  {fecha}: {len(camiones_fecha)} camiones")
     
@@ -1254,7 +1209,7 @@ def actualizar_disponibilidad_camiones(fecha_actual_str):
                 # Buscar el camión correspondiente
                 for camion in camiones_creados:
                     if camion.id_camion == expedicion['id_camion'] and camion.estado == "en_ruta":
-                        print(f"  ✅ Camión {camion.id_camion} ha retornado (salió {expedicion['fecha_salida']})")
+                        print(f"Camión {camion.id_camion} ha retornado (salió {expedicion['fecha_salida']})")
                         
                         # Actualizar expedición
                         expedicion['estado'] = 'completado'
@@ -1275,7 +1230,7 @@ def actualizar_disponibilidad_camiones(fecha_actual_str):
     expediciones_activas[:] = [e for e in expediciones_activas if e.get('estado') == 'en_viaje']
     
     if expediciones_completadas_hoy:
-        print(f"  📊 {len(expediciones_completadas_hoy)} expediciones completadas hoy")
+        print(f"{len(expediciones_completadas_hoy)} expediciones completadas hoy")
     
     return len(camiones_que_retornan)
 
@@ -1283,7 +1238,7 @@ def actualizar_retorno_expedicion_csv(id_camion, fecha_real_retorno, archivo="ex
     """Actualiza el CSV cuando un camión retorna."""
     
     if not os.path.exists(archivo):
-        print(f"⚠️ Archivo {archivo} no existe. No se puede actualizar retorno.")
+        print(f" Archivo {archivo} no existe. No se puede actualizar retorno.")
         return False
     
     try:
@@ -1302,14 +1257,14 @@ def actualizar_retorno_expedicion_csv(id_camion, fecha_real_retorno, archivo="ex
             # Guardar cambios
             df.to_csv(archivo, index=False, encoding='utf-8')
             
-            print(f"    ✅ Actualizado CSV: Camión {id_camion} retornó el {fecha_real_retorno}")
+            print(f"Actualizado CSV: Camión {id_camion} retornó el {fecha_real_retorno}")
             return True
         else:
-            print(f"    ⚠️ No se encontró expedición en_viaje para camión {id_camion}")
+            print(f"No se encontró expedición en_viaje para camión {id_camion}")
             return False
             
     except Exception as e:
-        print(f"⚠️ Error actualizando CSV: {e}")
+        print(f" Error actualizando CSV: {e}")
         return False
 
 def reiniciar_camion_disponible(camion):
@@ -1317,7 +1272,7 @@ def reiniciar_camion_disponible(camion):
     Reinicia un camión para que esté disponible nuevamente.
     Asegura que quede completamente vacío.
     """
-    print(f"  🔄 Reiniciando camión {camion.id_camion} para reutilización")
+    print(f"Reiniciando camión {camion.id_camion} para reutilización")
     
     # Guardar tipo original
     era_especial = camion.es_especial
@@ -1354,14 +1309,14 @@ def reiniciar_camion_disponible(camion):
         if camion in camiones_especiales:
             camiones_especiales.remove(camion)
         camiones_normales.append(camion)
-        print("    → Convertido de especial a normal para reutilización")
+        print("Convertido de especial a normal para reutilización")
     
-    print(f"    ✅ Camión {camion.id_camion} completamente vacío y listo para reutilizar")
+    print(f"Camión {camion.id_camion} completamente vacío y listo para reutilizar")
         
 def verificar_reutilizacion_camiones():
     """Verifica si los camiones se están reutilizando."""
     print(f"\n{'='*60}")
-    print("🔄 VERIFICACIÓN DE REUTILIZACIÓN DE CAMIONES")
+    print("VERIFICACIÓN DE REUTILIZACIÓN DE CAMIONES")
     print(f"{'='*60}")
     
     # IDs de camiones que han estado en ruta
@@ -1383,20 +1338,20 @@ def verificar_reutilizacion_camiones():
     
     # Verificar si hay IDs reutilizados
     if len(camiones_creados) < Id_camiones:
-        print(f"♻️  POSIBLE REUTILIZACIÓN: {Id_camiones - len(camiones_creados)} camiones eliminados/consolidados")
+        print(f"POSIBLE REUTILIZACIÓN: {Id_camiones - len(camiones_creados)} camiones eliminados/consolidados")
     else:
-        print("⚠️  SIN REUTILIZACIÓN: Todos los camiones creados siguen en memoria")
+        print("SIN REUTILIZACIÓN: Todos los camiones creados siguen en memoria")
         
 def mostrar_expediciones_activas():
     """Muestra las expediciones en curso."""
     if not expediciones_activas:
-        print("  ℹ️ No hay expediciones activas")
+        print("No hay expediciones activas")
         return
     
-    print(f"\n🚛 EXPEDICIONES EN CURSO ({len(expediciones_activas)}):")
+    print(f"\nEXPEDICIONES EN CURSO ({len(expediciones_activas)}):")
     for exp in expediciones_activas:
-        print(f"  • Camión {exp['id_camion']}: Salió {exp['fecha_salida']}, Retorna {exp['fecha_retorno_estimada']}")
-        print(f"    Destinos: {exp['destinos']}, Tiempo: {exp['tiempo_ruta']:.2f}h, Peso: {exp['peso']}kg")
+        print(f"Camión {exp['id_camion']}: Salió {exp['fecha_salida']}, Retorna {exp['fecha_retorno_estimada']}")
+        print(f"Destinos: {exp['destinos']}, Tiempo: {exp['tiempo_ruta']:.2f}h, Peso: {exp['peso']}kg")
         
 def limpiar_camiones_vacios():
     """Elimina camiones que han estado vacíos por muchos días."""
@@ -1422,9 +1377,9 @@ def limpiar_camiones_vacios():
                 camiones_a_eliminar.append(camion)
     
     if camiones_a_eliminar:
-        print(f"\n🧹 LIMPIANDO {len(camiones_a_eliminar)} CAMIONES VACÍOS/INEFICIENTES")
+        print(f"\nLIMPIANDO {len(camiones_a_eliminar)} CAMIONES VACÍOS/INEFICIENTES")
         for camion in camiones_a_eliminar:
-            print(f"  • Eliminando camión {camion.id_camion} ({'especial' if camion.es_especial else 'normal'})")
+            print(f"Eliminando camión {camion.id_camion} ({'especial' if camion.es_especial else 'normal'})")
             
             if camion in camiones_normales:
                 camiones_normales.remove(camion)
@@ -1433,10 +1388,10 @@ def limpiar_camiones_vacios():
             if camion in camiones_creados:
                 camiones_creados.remove(camion)
         
-        print("  ✅ Limpieza completada")
-        print(f"     Camiones normales: {len(camiones_normales)}")
-        print(f"     Camiones especiales: {len(camiones_especiales)}")
-        print(f"     Total camiones: {len(camiones_creados)}")
+        print("Limpieza completada")
+        print(f"Camiones normales: {len(camiones_normales)}")
+        print(f"Camiones especiales: {len(camiones_especiales)}")
+        print(f"Total camiones: {len(camiones_creados)}")
     
     return len(camiones_a_eliminar)
 
@@ -1465,20 +1420,15 @@ def exportar_resumen_final_expediciones(archivo="resumen_expediciones.csv"):
             # Guardar resumen
             resumen_por_dia.to_csv(archivo, index=False, encoding='utf-8')
             
-            print(f"\n📊 RESUMEN EXPORTADO a {archivo}")
-            print(f"   Días procesados: {len(resumen_por_dia)}")
-            print(f"   Total expediciones: {resumen_por_dia['num_expediciones'].sum()}")
-            print(f"   Total productos enviados: {resumen_por_dia['total_productos'].sum()}")
-            print(f"   Total peso transportado: {resumen_por_dia['peso_total_kg'].sum():,.0f}kg")
             
             return archivo
             
         else:
-            print("⚠️ No hay datos de expediciones para exportar.")
+            print("No hay datos de expediciones para exportar")
             return None
             
     except Exception as e:
-        print(f"⚠️ Error exportando resumen: {e}")
+        print(f"Error exportando resumen: {e}")
         return None
 
 def guardar_expedicion_csv(expedicion, archivo="expediciones_camiones.csv"):
@@ -1520,7 +1470,7 @@ def guardar_expedicion_csv(expedicion, archivo="expediciones_camiones.csv"):
             # Concatenar nueva fila
             df_completo = pd.concat([df_existente, nueva_fila_df], ignore_index=True)
         except Exception as e:
-            print(f"⚠️ Error leyendo CSV existente: {e}. Creando nuevo archivo.")
+            print(f"Error leyendo CSV existente: {e}. Creando nuevo archivo.")
             df_completo = nueva_fila_df
     else:
         df_completo = nueva_fila_df
@@ -1529,6 +1479,7 @@ def guardar_expedicion_csv(expedicion, archivo="expediciones_camiones.csv"):
     df_completo.to_csv(archivo, index=False, encoding='utf-8')
     
     return fila['id_expedicion']
+
 def extraer_info_productos_detallada(camion, fecha_actual):
     """Extrae información detallada de todos los productos de un camión."""
     productos_info = []
@@ -1564,8 +1515,9 @@ def extraer_info_productos_detallada(camion, fecha_actual):
                 fecha_cad_dt = datetime.strptime(info['fecha_caducidad'], '%Y-%m-%d')
                 fecha_actual_dt = datetime.strptime(fecha_actual, '%Y-%m-%d')
                 info['dias_hasta_caducidad'] = (fecha_cad_dt - fecha_actual_dt).days
-            except:
+            except Exception as e:
                 info['dias_hasta_caducidad'] = None
+                print(f"Error al calcular dias de caducida {e}")
         
         if info['producto_id'] != 'desconocido' and info['cantidad'] > 0:
             productos_info.append(info)
@@ -1619,7 +1571,7 @@ def obtener_resumen_productos(productos_info):
     destinos_str = "|".join(sorted(set().union(*[data['destinos'] for data in productos_agrupados.values()])))
     
     return productos_str, total_productos, destinos_str
+
 # ========== EJECUCIÓN ==========
 if __name__ == "__main__":
     comprobar_pedidos_fecha_produccion()
-    verificar_reutilizacion_camiones()
