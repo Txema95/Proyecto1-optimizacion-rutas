@@ -33,9 +33,9 @@ class Camion:
         self.fecha_salida = fecha_salida
         self.fecha_vuelta = None
         self.ruta = ruta
-        self.estado = "disponible"  # disponible, en_ruta
+        self.estado = None  # None = disponible, "en_ruta" = en viaje
         
-        # disponible, en_ruta
+        # 
         self.ruta_fuerza_bruta = None
         self.ruta_vecino_cercano = None
         self.ruta_insercion = None
@@ -189,6 +189,58 @@ class Camion:
         print(f"  Diferencia: +{self.tiempo_insercion - self.tiempo_fuerza_bruta:.2f}h" 
               if self.ruta_fuerza_bruta else "")
         
+    def agregar_pedido_normal_a_camion(self,producto, fecha, destino_id, cantidad):
+        global Id_camiones, camiones_normales, camiones_creados
+        
+        producto_id = producto['ProductoID']
+        
+        # PRIMERO: Buscar camión con MISMO DESTINO y MISMO PRODUCTO
+        camion_preferido = None
+        
+        for c in camiones_normales:
+            if (destino_id in c.destinos and 
+                tiene_mismo_producto(c, producto_id) and
+                c.capacidad_disponible() >= cantidad):
+                camion_preferido = c
+                break
+        
+        # SEGUNDO: Si no encuentra, buscar cualquier camión con capacidad
+        if not camion_preferido:
+            for c in camiones_normales:
+                if c.capacidad_disponible() >= cantidad:
+                    camion_preferido = c
+                    break
+        
+        # TERCERO: Si aún no encuentra, crear nuevo camión
+        if not camion_preferido:
+            Id_camiones += 1
+            camion_preferido = Camion(
+                id_camion=Id_camiones,
+                peso_maximo=self.Peso_maximo,
+                fecha_salida=fecha,
+                es_especial=False
+            )
+            camiones_normales.append(camion_preferido)
+            camiones_creados.append(camion_preferido)
+            print(f"  🚚 Nuevo camión normal {Id_camiones}")
+        
+        # Agregar producto
+        if camion_preferido.agregar_producto(producto, cantidad, destino_id):
+            print(f"  ✓ Agregado al camión {camion_preferido.id_camion}")
+            print(f"    Destinos: {camion_preferido.destinos}")
+            print(f"    Producto ID: {producto_id}")
+            return camion_preferido
+        
+        return None
+
+def tiene_mismo_producto(camion, producto_id):
+    """Verifica si el camión ya lleva este producto."""
+    for pedido in camion.productos_asignados:
+        if isinstance(pedido, dict) and pedido.get('ProductoID') == producto_id:
+            return True
+        elif hasattr(pedido, 'ProductoID') and pedido.ProductoID == producto_id:
+            return True
+    return False
         
     def get_rutas(self):
         return self.ruta

@@ -1,0 +1,308 @@
+[
+  {
+    "cluster_id": "R001",
+    "ruta": [
+      0,
+      5,
+      8,
+      12,
+      25,
+      0
+    ],
+    "destinos": [
+      8,
+      25,
+      12,
+      5
+    ],
+    "num_destinos": 4,
+    "tiempo_horas": 6.57,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.609,
+    "tipo": "kmeans"
+  },
+  {
+    "cluster_id": "R002",
+    "ruta": [
+      0,
+      1,
+      23,
+      38,
+      34,
+      0
+    ],
+    "destinos": [
+      34,
+      1,
+      38,
+      23
+    ],
+    "num_destinos": 4,
+    "tiempo_horas": 11.82,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.338,
+    "tipo": "kmeans"
+  },
+  {
+    "cluster_id": "R003",
+    "ruta": [
+      0,
+      30,
+      16,
+      6,
+      17,
+      0
+    ],
+    "destinos": [
+      17,
+      30,
+      6,
+      16
+    ],
+    "num_destinos": 4,
+    "tiempo_horas": 14.59,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.274,
+    "tipo": "barrido"
+  },
+  {
+    "cluster_id": "R004",
+    "ruta": [
+      0,
+      32,
+      3,
+      2,
+      0
+    ],
+    "destinos": [
+      32,
+      2,
+      3
+    ],
+    "num_destinos": 3,
+    "tiempo_horas": 16.58,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.181,
+    "tipo": "barrido"
+  },
+  {
+    "cluster_id": "R005",
+    "ruta": [
+      0,
+      9,
+      28,
+      0
+    ],
+    "destinos": [
+      9,
+      28
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 15.4,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.13,
+    "tipo": "combinada"
+  },
+  {
+    "cluster_id": "R006",
+    "ruta": [
+      0,
+      11,
+      19,
+      0
+    ],
+    "destinos": [
+      11,
+      19
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 15.99,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.125,
+    "tipo": "combinada"
+  },
+  {
+    "cluster_id": "R007",
+    "ruta": [
+      0,
+      27,
+      33,
+      0
+    ],
+    "destinos": [
+      27,
+      33
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 17.56,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.114,
+    "tipo": "combinada"
+  },
+  {
+    "cluster_id": "R008",
+    "ruta": [
+      0,
+      13,
+      37,
+      0
+    ],
+    "destinos": [
+      13,
+      37
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 17.68,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.113,
+    "tipo": "barrido"
+  },
+  {
+    "cluster_id": "R009",
+    "ruta": [
+      0,
+      35,
+      14,
+      0
+    ],
+    "destinos": [
+      14,
+      35
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 17.92,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.112,
+    "tipo": "combinada"
+  },
+  {
+    "cluster_id": "R010",
+    "ruta": [
+      0,
+      24,
+      22,
+      0
+    ],
+    "destinos": [
+      24,
+      22
+    ],
+    "num_destinos": 2,
+    "tiempo_horas": 18.0,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.111,
+    "tipo": "combinada"
+  },
+  {
+    "cluster_id": "R011",
+    "ruta": [
+      0,
+      36,
+      0
+    ],
+    "destinos": [
+      36
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 16.02,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.062,
+    "tipo": "individual"
+  },
+  {
+    "cluster_id": "R012",
+    "ruta": [
+      0,
+      7,
+      0
+    ],
+    "destinos": [
+      7
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 17.64,
+    "viable": true,
+    "estado": "✅ VIABLE",
+    "eficiencia": 0.057,
+    "tipo": "individual"
+  },
+  {
+    "cluster_id": "R013",
+    "ruta": [
+      0,
+      29,
+      0
+    ],
+    "destinos": [
+      29
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 19.7,
+    "viable": "False",
+    "estado": "⚠️ FORZADA",
+    "eficiencia": 0.051,
+    "tipo": "forzada"
+  },
+  {
+    "cluster_id": "R014",
+    "ruta": [
+      0,
+      39,
+      0
+    ],
+    "destinos": [
+      39
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 20.3,
+    "viable": "False",
+    "estado": "⚠️ FORZADA",
+    "eficiencia": 0.049,
+    "tipo": "forzada"
+  },
+  {
+    "cluster_id": "R015",
+    "ruta": [
+      0,
+      15,
+      0
+    ],
+    "destinos": [
+      15
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 20.22,
+    "viable": "False",
+    "estado": "⚠️ FORZADA",
+    "eficiencia": 0.049,
+    "tipo": "forzada"
+  },
+  {
+    "cluster_id": "R016",
+    "ruta": [
+      0,
+      40,
+      0
+    ],
+    "destinos": [
+      40
+    ],
+    "num_destinos": 1,
+    "tiempo_horas": 20.98,
+    "viable": "False",
+    "estado": "⚠️ FORZADA",
+    "eficiencia": 0.048,
+    "tipo": "forzada"
+  }
+]
