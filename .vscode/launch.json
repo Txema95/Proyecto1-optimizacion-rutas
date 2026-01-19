@@ -5,13 +5,37 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "EJECUTAR APP",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "noDebug": true,
+            "args": [
+                "run",
+                "Frontend/main.py",
+                "--server.runOnSave", "false"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Main_TX",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "app/model_routing/main_model1.py"
+                "main.py"
+            ]
+        },
+        {
+            "name": "Main_Front",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "Frontend/main.py"
             ]
         },
         {
