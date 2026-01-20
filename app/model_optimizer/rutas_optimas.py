@@ -75,7 +75,7 @@ def crear_rutas_kmeans_simple(df_matriz, tiempo_max=18.0):
     """
     Versión simplificada de K-Means que garantiza rutas viables.
     """
-    print("\n🔄 EJECUTANDO K-MEANS SIMPLIFICADO")
+    print("\nEJECUTANDO K-MEANS SIMPLIFICADO")
     
     destinos = [int(col) for col in df_matriz.columns if col != '0' and col.isdigit()]
     
@@ -90,7 +90,7 @@ def crear_rutas_kmeans_simple(df_matriz, tiempo_max=18.0):
                 'num_destinos': len(destinos),
                 'tiempo_horas': round(tiempo, 2),
                 'viable': True,
-                'estado': '✅ VIABLE',
+                'estado': 'VIABLE',
                 'eficiencia': round(len(destinos) / tiempo, 3) if tiempo > 0 else 0,
                 'tipo': 'kmeans'
             }]
@@ -155,7 +155,7 @@ def crear_rutas_kmeans_simple(df_matriz, tiempo_max=18.0):
                                 'num_destinos': len(subgrupo),
                                 'tiempo_horas': round(tiempo, 2),
                                 'viable': True,
-                                'estado': '✅ VIABLE',
+                                'estado': 'VIABLE',
                                 'eficiencia': round(len(subgrupo) / tiempo, 3) if tiempo > 0 else 0,
                                 'tipo': 'kmeans'
                             })
@@ -170,7 +170,7 @@ def crear_rutas_kmeans_simple(df_matriz, tiempo_max=18.0):
                         'num_destinos': len(destinos_cluster),
                         'tiempo_horas': round(tiempo, 2),
                         'viable': True,
-                        'estado': '✅ VIABLE',
+                        'estado': 'VIABLE',
                         'eficiencia': round(len(destinos_cluster) / tiempo, 3) if tiempo > 0 else 0,
                         'tipo': 'kmeans'
                     })
@@ -180,7 +180,7 @@ def crear_rutas_kmeans_simple(df_matriz, tiempo_max=18.0):
         return rutas
         
     except Exception as e:
-        print(f"  ⚠️ Error en K-Means: {e}")
+        print(f"  Error en K-Means: {e}")
         return []
 
 # ========== ALGORITMO DE BARRIDO ==========
@@ -189,7 +189,7 @@ def crear_rutas_barrido(df_matriz, tiempo_max=18.0):
     """
     Algoritmo de barrido simple y efectivo.
     """
-    print("\n🔄 EJECUTANDO ALGORITMO DE BARRIDO")
+    print("\nEJECUTANDO ALGORITMO DE BARRIDO")
     
     destinos = [int(col) for col in df_matriz.columns if col != '0' and col.isdigit()]
     destinos_ordenados = sorted(destinos, key=lambda x: df_matriz.loc[0, str(x)])
@@ -224,7 +224,7 @@ def crear_rutas_barrido(df_matriz, tiempo_max=18.0):
                         'num_destinos': len(ruta_actual),
                         'tiempo_horas': round(tiempo_real, 2),
                         'viable': True,
-                        'estado': '✅ VIABLE',
+                        'estado': 'VIABLE',
                         'eficiencia': round(len(ruta_actual) / tiempo_real, 3) if tiempo_real > 0 else 0,
                         'tipo': 'barrido'
                     })
@@ -243,7 +243,7 @@ def crear_rutas_barrido(df_matriz, tiempo_max=18.0):
                 'num_destinos': len(ruta_actual),
                 'tiempo_horas': round(tiempo_real, 2),
                 'viable': True,
-                'estado': '✅ VIABLE',
+                'estado': 'VIABLE',
                 'eficiencia': round(len(ruta_actual) / tiempo_real, 3) if tiempo_real > 0 else 0,
                 'tipo': 'barrido'
             })
@@ -274,7 +274,7 @@ def combinar_destinos_pequenos(destinos, df_matriz, tiempo_max):
                     'num_destinos': len(grupo),
                     'tiempo_horas': round(tiempo, 2),
                     'viable': True,
-                    'estado': '✅ VIABLE',
+                    'estado': 'VIABLE',
                     'eficiencia': round(len(grupo) / tiempo, 3),
                     'tipo': 'combinada'
                 })
@@ -293,7 +293,7 @@ def combinar_destinos_pequenos(destinos, df_matriz, tiempo_max):
                 'num_destinos': 1,
                 'tiempo_horas': round(tiempo, 2),
                 'viable': True,
-                'estado': '✅ VIABLE',
+                'estado': 'VIABLE',
                 'eficiencia': round(1 / tiempo, 3),
                 'tipo': 'individual'
             })
@@ -329,7 +329,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     """
     Genera rutas que cubran TODOS los destinos.
     """
-    print(f"\n🎯 GENERANDO RUTAS COMPLETAS (COBERTURA TOTAL)")
+    print("\nGENERANDO RUTAS COMPLETAS (COBERTURA TOTAL)")
     print("="*60)
     
     destinos = [int(col) for col in df_matriz.columns if col != '0' and col.isdigit()]
@@ -340,7 +340,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     destinos_cubiertos = set()
     
     # ESTRATEGIA 1: K-Means
-    print(f"\n1️⃣ RUTAS K-MEANS OPTIMIZADAS:")
+    print("\n1. RUTAS K-MEANS OPTIMIZADAS:")
     rutas_kmeans = crear_rutas_kmeans_simple(df_matriz, tiempo_max)
     
     for ruta in rutas_kmeans:
@@ -354,7 +354,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     destinos_faltantes = [d for d in destinos if d not in destinos_cubiertos]
     
     if destinos_faltantes:
-        print(f"\n2️⃣ RUTAS DE BARRIDO PARA DESTINOS FALTANTES:")
+        print("\n2. RUTAS DE BARRIDO PARA DESTINOS FALTANTES:")
         print(f"   Destinos sin cubrir: {len(destinos_faltantes)}")
         
         # Filtrar matriz solo para destinos faltantes
@@ -372,7 +372,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     destinos_faltantes = [d for d in destinos if d not in destinos_cubiertos]
     
     if destinos_faltantes:
-        print(f"\n3️⃣ COMBINANDO DESTINOS MUY PEQUEÑOS:")
+        print("\n3. COMBINANDO DESTINOS MUY PEQUEÑOS:")
         print(f"   Destinos pendientes: {len(destinos_faltantes)}")
         
         rutas_combinadas = combinar_destinos_pequenos(destinos_faltantes, df_matriz, tiempo_max)
@@ -385,7 +385,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     destinos_faltantes = [d for d in destinos if d not in destinos_cubiertos]
     
     if destinos_faltantes:
-        print(f"\n4️⃣ AGREGANDO A RUTAS EXISTENTES:")
+        print("\n4. AGREGANDO A RUTAS EXISTENTES:")
         
         for destino in destinos_faltantes:
             ruta_encontrada = encontrar_ruta_para_agregar(destino, todas_rutas, df_matriz, tiempo_max)
@@ -402,7 +402,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
                     'num_destinos': 1,
                     'tiempo_horas': round(tiempo, 2),
                     'viable': tiempo <= tiempo_max,
-                    'estado': '⚠️ FORZADA' if tiempo > tiempo_max else '✅ VIABLE',
+                    'estado': 'FORZADA' if tiempo > tiempo_max else 'VIABLE',
                     'eficiencia': round(1 / tiempo, 3) if tiempo > 0 else 0,
                     'tipo': 'forzada'
                 }
@@ -411,14 +411,14 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
     
     # RESULTADO FINAL
     print(f"\n{'='*60}")
-    print("📊 COBERTURA FINAL")
+    print("COBERTURA FINAL")
     print(f"{'='*60}")
     
     cobertura = len(destinos_cubiertos) / len(destinos) * 100
     
     print(f"Destinos totales: {len(destinos)}")
     print(f"Destinos cubiertos: {len(destinos_cubiertos)} ({cobertura:.1f}%)")
-    print(f"Cobertura: {'✅ COMPLETA' if cobertura == 100 else '⚠️ INCOMPLETA'}")
+    print(f"Cobertura: {'COMPLETA' if cobertura == 100 else 'INCOMPLETA'}")
     
     # Ordenar por eficiencia
     todas_rutas.sort(key=lambda x: x['eficiencia'], reverse=True)
@@ -436,7 +436,7 @@ def generar_rutas_completas(df_matriz, tiempo_max=18.0):
 def guardar_rutas_csv(rutas, nombre_archivo="rutas_completas.csv"):
     """Guarda las rutas optimizadas en CSV."""
     if not rutas:
-        print("⚠️ No hay rutas para guardar")
+        print("No hay rutas para guardar")
         return None
     
     datos = []
@@ -458,7 +458,7 @@ def guardar_rutas_csv(rutas, nombre_archivo="rutas_completas.csv"):
     
     rutas_viables = [r for r in rutas if r['viable']]
     
-    print(f"\n💾 RESULTADOS GUARDADOS:")
+    print("\nRESULTADOS GUARDADOS:")
     print(f"  Archivo: {nombre_archivo}")
     print(f"  Total rutas: {len(rutas)}")
     print(f"  Rutas viables: {len(rutas_viables)}")
@@ -478,7 +478,7 @@ def mostrar_rutas_detalladas(rutas, df_matriz):
     rutas_viables = [r for r in rutas if r['viable']]
     
     if rutas_viables:
-        print(f"\n✅ RUTAS VIABLES ({len(rutas_viables)}):")
+        print(f"\nRUTAS VIABLES ({len(rutas_viables)}):")
         for i, ruta in enumerate(rutas_viables[:10]):  # Mostrar solo 10
             print(f"\n  {ruta['cluster_id']} ({ruta.get('tipo', 'N/A')}):")
             print(f"    Destinos: {ruta['destinos']}")
@@ -500,7 +500,7 @@ def main():
         # Cargar matriz
         df_matriz = pd.read_csv('matriz_tiempos_destinos.csv', index_col=0)
         destinos_total = len([col for col in df_matriz.columns if col != '0' and col.isdigit()])
-        print(f"✅ Matriz cargada: {destinos_total} destinos")
+        print(f"Matriz cargada: {destinos_total} destinos")
         
         # Generar rutas
         rutas = generar_rutas_completas(df_matriz, tiempo_max=18.0)
@@ -512,7 +512,7 @@ def main():
         print("RESUMEN EJECUTIVO")
         print(f"{'='*80}")
         
-        print(f"📊 ESTADÍSTICAS:")
+        print("ESTADISTICAS:")
         print(f"  Total rutas: {len(rutas)}")
         print(f"  Rutas viables: {len(rutas_viables)}")
         
@@ -543,15 +543,15 @@ def main():
         if rutas:
             with open('rutas_detalladas.json', 'w', encoding='utf-8') as f:
                 json.dump(rutas, f, indent=2, default=str, ensure_ascii=False)
-            print(f"\n💾 JSON guardado: rutas_detalladas.json")
+            print("\nJSON guardado: rutas_detalladas.json")
         
         return rutas, archivo
         
     except FileNotFoundError:
-        print("❌ Archivo 'matriz_tiempos_destinos.csv' no encontrado")
+        print("Archivo 'matriz_tiempos_destinos.csv' no encontrado")
         return [], None
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         import traceback
         traceback.print_exc()
         return [], None
@@ -562,6 +562,6 @@ if __name__ == "__main__":
     rutas, archivo = main()
     
     if archivo:
-        print(f"\n🎯 Proceso completado.")
+        print("\nProceso completado.")
         print(f"   Archivo CSV: {archivo}")
         print(f"   Para usar: pd.read_csv('{archivo}')")
