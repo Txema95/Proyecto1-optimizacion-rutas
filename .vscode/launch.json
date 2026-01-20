@@ -1,0 +1,52 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "EJECUTAR APP",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "noDebug": true,
+            "args": [
+                "run",
+                "Frontend/main.py",
+                "--server.runOnSave", "false"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Main_TX",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "main.py"
+            ]
+        },
+        {
+            "name": "Main_Front",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "Frontend/main.py"
+            ]
+        },
+        {
+            "name": "Transform_data",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "app/data/transform_nodos_data.py"
+            ]
+        }
+    ]
+}

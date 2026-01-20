@@ -5,8 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "deap>=1.4.3",
     "dotenv>=0.9.9",
+    "geopy>=2.4.1",
+    "matplotlib>=3.10.8",
+    "openrouteservice>=2.3.3",
+    "plotly>=6.5.2",
     "pyodbc>=5.3.0",
+    "scikit-learn>=1.8.0",
     "sqlalchemy>=2.0.44",
     "streamlit>=1.51.0",
+    "streamlit-folium>=0.26.1",
 ]
