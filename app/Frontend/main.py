@@ -2,13 +2,13 @@ import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 import openrouteservice
-import app.constantes as CONST
 import os
 import sys
 import folium
-import server 
 from datetime import date
-import app.constantes as CONST 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+import server 
+import app.constantes as CONST
 
 # Conexion con openroute para calcular rutas
 #OPENROUTER_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijk5MjU0MTEzN2M4ODRiYjM5YzkyODFlNWRjZDRlOWY0IiwiaCI6Im11cm11cjY0In0="
@@ -23,7 +23,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
-from app.database import database
+
 
 if 'camiones' not in st.session_state:
     st.session_state.camiones = []
